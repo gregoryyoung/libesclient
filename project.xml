@@ -3,7 +3,7 @@
     script = "zproject.gsl"
     prefix = "es"
     header = "esclient.h">
-    <version major = "0" minor="1"/>
+    <version major = "0" minor="1" patch="0"/>
     <include filename = "license.xml" />
     <use project = "czmq" />
     <class name = "es_connection" />

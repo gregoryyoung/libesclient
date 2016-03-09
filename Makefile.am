@@ -26,6 +26,7 @@ noinst_LTLIBRARIES =
 TESTS =
 
 EXTRA_DIST = \
+    src/es_connection_actor.h \
     LICENSE \
     README.md \
     src/es_classes.h

@@ -101,13 +101,8 @@ ENDIF (CZMQ_FOUND)
 set (es_headers
     include/es_library.h
     include/esclient.h
+    src/es_connection_actor.h
 )
-
-IF (ENABLE_DRAFTS)
-    list(APPEND es_headers
-        include/es_connection.h
-    )
-ENDIF (ENABLE_DRAFTS)
 
 source_group ("Header Files" FILES ${es_headers})
 install(FILES ${es_headers} DESTINATION include)
@@ -117,14 +112,8 @@ install(FILES ${es_headers} DESTINATION include)
 ########################################################################
 include_directories("${SOURCE_DIR}/src" "${SOURCE_DIR}/include")
 set (es_sources
+    src/es_connection_actor.c
 )
-
-IF (ENABLE_DRAFTS)
-    list (APPEND es_sources
-        src/es_connection.c
-    )
-ENDIF (ENABLE_DRAFTS)
-
 source_group("Source Files" FILES ${es_sources})
 if (NOT DEFINED BUILD_SHARED_LIBS)
     SET(BUILD_SHARED_LIBS ON)
@@ -210,13 +199,8 @@ set(CLASSTEST_TIMEOUT 5 CACHE STRING "Timeout of the selftest of a class")
 set(TOTAL_TIMEOUT 20 CACHE STRING "Timout of the total testsuite")
 
 set(TEST_CLASSES
+    es_connection_actor
 )
-
-IF (ENABLE_DRAFTS)
-    list (APPEND TEST_CLASSES
-    es_connection
-    )
-ENDIF (ENABLE_DRAFTS)
 
 foreach(TEST_CLASS ${TEST_CLASSES})
     add_test(

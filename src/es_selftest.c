@@ -42,9 +42,7 @@ typedef struct {
 
 static test_item_t
 all_tests [] = {
-#ifdef ES_BUILD_DRAFT_API
-    { "es_connection", es_connection_test },
-#endif // ES_BUILD_DRAFT_API
+    { "es_connection_actor", es_connection_actor_test },
     {0, 0}          //  Sentinel
 };
 
@@ -109,7 +107,7 @@ main (int argc, char **argv)
         if (streq (argv [argn], "--list")
         ||  streq (argv [argn], "-l")) {
             puts ("Available tests:");
-            puts ("    es_connection");
+            puts ("    es_connection_actor");
             return 0;
         }
         else

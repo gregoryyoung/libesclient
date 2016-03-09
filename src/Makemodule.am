@@ -16,19 +16,9 @@ include_HEADERS = \
     include/esclient.h \
     include/es_library.h
 
-if ENABLE_DRAFTS
-include_HEADERS += \
-    include/es_connection.h
-
-endif
 src_libes_la_SOURCES = \
+    src/es_connection_actor.c \
     src/platform.h
-
-if ENABLE_DRAFTS
-src_libes_la_SOURCES += \
-    src/es_connection.c
-
-endif
 
 src_libes_la_CPPFLAGS = ${AM_CPPFLAGS}
 

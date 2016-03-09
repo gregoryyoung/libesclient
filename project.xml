@@ -7,6 +7,6 @@
     <include filename = "license.xml" />
     <target name = "travis" />
     <use project = "czmq" />
-    <class name = "es_connection" />
+    <actor name = "es_connection_actor" private = "1"/>
     <main name = "es_client_tests" private = "1"/>
 </project>

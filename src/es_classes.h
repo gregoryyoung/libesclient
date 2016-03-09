@@ -39,5 +39,11 @@
 #include "../include/esclient.h"
 
 //  Internal API
+#include "es_connection_actor.h"
+
+//  *** Draft method, defined for internal use only ***
+//  Self test of this class.
+ES_EXPORT void
+    es_connection_actor_test (bool verbose);
 
 #endif

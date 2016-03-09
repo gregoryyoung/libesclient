@@ -1,0 +1,28 @@
+# Travis CI script
+language: c
+
+os:
+- linux
+
+sudo: false
+
+services:
+- docker
+
+env:
+- BUILD_TYPE=default
+#- BUILD_TYPE=android
+#- BUILD_TYPE=check-py
+#- BUILD_TYPE=cmake
+
+addons:
+  apt:
+    packages:
+    - valgrind
+    - git
+
+before_install:
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils valgrind ; fi
+
+# Hand off to generated script for each BUILD_TYPE
+script: ./ci_build.sh

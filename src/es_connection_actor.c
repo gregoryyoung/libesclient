@@ -98,7 +98,7 @@ es_connection_actor_start (es_connection_actor_t *self)
 }
 
 
-//  Stop this actor. Return a value greater or equal to zero if initialization
+//  Stop this actor. Return a value greater or equal to zero if stopping 
 //  was successful. Otherwise -1.
 
 static int
@@ -174,20 +174,19 @@ void
 es_connection_actor_test (bool verbose)
 {
     printf (" * es_connection_actor: ");
-
     //int rc = 0;
     //  @selftest
     //  Simple create/destroy test
     zactor_t *es_connection_actor = zactor_new (es_connection_actor_actor, NULL);
+    /*
+    zstr_send (es_connection_actor, "START");
+    rc = zsock_wait (es_connection_actor);         //  Wait until actor started
+    assert (rc == 0);
 
-    //zstr_send (es_connection_actor, "START");
-    //rc = zsock_wait (es_connection_actor);         //  Wait until actor started
-    //assert (rc == 0);
-
-    //zstr_send (es_connection_actor, "STOP");
-    //rc = zsock_wait (es_connection_actor);         //  Wait until actor stopped
-    //assert (rc == 0);
-
+    zstr_send (es_connection_actor, "STOP");
+    rc = zsock_wait (es_connection_actor);         //  Wait until actor stopped
+    assert (rc == 0);
+    */
     zactor_destroy (&es_connection_actor);
     //  @end
 

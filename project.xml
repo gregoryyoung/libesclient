@@ -1,0 +1,11 @@
+<project
+    name = "libesclient"
+    script = "zproject.gsl"
+    prefix = "es"
+    header = "esclient.h">
+    <version major = "0" minor="1"/>
+    <include filename = "license.xml" />
+    <use project = "czmq" />
+    <class name = "es_connection" />
+    <main name = "es_client_tests" />
+</project>

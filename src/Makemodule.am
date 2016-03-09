@@ -51,7 +51,7 @@ endif
 src_libes_la_LIBADD = ${project_libs}
 
 if ENABLE_ES_CLIENT_TESTS
-bin_PROGRAMS += src/es_client_tests
+noinst_PROGRAMS += src/es_client_tests
 src_es_client_tests_CPPFLAGS = ${AM_CPPFLAGS}
 src_es_client_tests_LDADD = ${program_libs}
 src_es_client_tests_SOURCES = src/es_client_tests.c

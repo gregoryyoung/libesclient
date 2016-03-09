@@ -328,7 +328,7 @@ AM_CONDITIONAL(BUILD_DOC, test "x$libesclient_build_doc" = "xyes")
 # Check for es_client_tests intent
 AC_ARG_ENABLE([es_client_tests],
     AS_HELP_STRING([--enable-es_client_tests],
-        [Compile and install 'es_client_tests' [default=yes]]),
+        [Compile 'es_client_tests' in src [default=yes]]),
     [enable_es_client_tests=$enableval],
     [enable_es_client_tests=yes])
 

@@ -129,7 +129,7 @@ es_connection_actor_recv_api (es_connection_actor_t *self)
     if (streq (command, "STOP"))
         es_connection_actor_stop (self);
     else
-    if (streq (command, "VERBOSE"))
+    if (streq (command, "VERBOS"))
         self->verbose = true;
     else
     if (streq (command, "$TERM"))

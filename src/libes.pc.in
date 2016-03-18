@@ -12,7 +12,7 @@ Name: libes
 Description: Project
 Version: @VERSION@
 
-Requires:libzmq libczmq
+Requires:libzmq libczmq protobuf-c
 
 Libs: -L${libdir} -les
 Cflags: -I${includedir} @pkg_config_defines@

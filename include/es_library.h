@@ -37,6 +37,7 @@
 
 //  External dependencies
 #include <czmq.h>
+#include <protobuf-c/protobuf-c.h>
 
 //  ES version macros for compile-time API detection
 #define ES_VERSION_MAJOR 0

@@ -96,6 +96,17 @@ ELSE (CZMQ_FOUND)
 ENDIF (CZMQ_FOUND)
 
 ########################################################################
+# PROTOBUF-C dependency
+########################################################################
+find_package(protobuf-c REQUIRED)
+IF (PROTOBUF-C_FOUND)
+    include_directories(${PROTOBUF-C_INCLUDE_DIRS})
+    list(APPEND MORE_LIBRARIES ${PROTOBUF-C_LIBRARIES})
+ELSE (PROTOBUF-C_FOUND)
+    message( FATAL_ERROR "protobuf-c not found." )
+ENDIF (PROTOBUF-C_FOUND)
+
+########################################################################
 # includes
 ########################################################################
 set (es_headers
@@ -170,6 +181,7 @@ target_link_libraries(
     es
     ${LIBZMQ_LIBRARIES}
     ${CZMQ_LIBRARIES}
+    ${PROTOBUF-C_LIBRARIES}
     ${OPTIONAL_LIBRARIES}
 )
 set_target_properties(
@@ -185,6 +197,7 @@ target_link_libraries(
     es
     ${LIBZMQ_LIBRARIES}
     ${CZMQ_LIBRARIES}
+    ${PROTOBUF-C_LIBRARIES}
     ${OPTIONAL_LIBRARIES}
 )
 set_target_properties(

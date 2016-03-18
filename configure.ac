@@ -160,6 +160,50 @@ if test "x$was_czmq_check_lib_detected" = "xno"; then
     LIBS="${czmq_LIBS} ${LIBS}"
 fi
 
+was_protobuf_c_check_lib_detected=no
+
+PKG_CHECK_MODULES([protobuf_c], [protobuf-c >= 0.0.0],
+    [
+    ],
+    [
+        AC_ARG_WITH([protobuf-c],
+            [
+                AS_HELP_STRING([--with-protobuf-c],
+                [Specify protobuf-c prefix])
+            ],
+            [search_protobuf-c="yes"],
+            [])
+
+        protobuf_c_synthetic_cflags=""
+        protobuf_c_synthetic_libs="-lprotobuf-c"
+
+        if test "x$search_protobuf-c" = "xyes"; then
+            if test -r "${with_protobuf-c}/include/protobuf-c/protobuf-c.h"; then
+                protobuf_c_synthetic_cflags="-I${with_protobuf-c}/include"
+                protobuf_c_synthetic_libs="-L${with_protobuf-c}/lib -lprotobuf-c"
+            else
+                AC_MSG_ERROR([${with_protobuf-c}/include/protobuf-c/protobuf-c.h not found. Please check protobuf-c prefix])
+            fi
+        fi
+
+        AC_CHECK_LIB([protobuf-c], [protobuf_c_version],
+            [
+                CFLAGS="${protobuf_c_synthetic_cflags} ${CFLAGS}"
+                LDFLAGS="${protobuf_c_synthetic_libs} ${LDFLAGS}"
+                LIBS="${protobuf_c_synthetic_libs} ${LIBS}"
+
+                AC_SUBST([protobuf_c_CFLAGS],[${protobuf_c_synthetic_cflags}])
+                AC_SUBST([protobuf_c_LIBS],[${protobuf_c_synthetic_libs}])
+                was_protobuf_c_check_lib_detected=yes
+            ],
+            [AC_MSG_ERROR([cannot link with -lprotobuf-c, install protobuf-c])])
+    ])
+
+if test "x$was_protobuf_c_check_lib_detected" = "xno"; then
+    CFLAGS="${protobuf_c_CFLAGS} ${CFLAGS}"
+    LIBS="${protobuf_c_LIBS} ${LIBS}"
+fi
+
 CFLAGS="${PREVIOUS_CFLAGS}"
 LIBS="${PREVIOUS_LIBS}"
 

@@ -28,6 +28,6 @@ before_install:
 - tar xvfz protobuf-2.6.0.tar.gz
 - cd protobuf-2.6.0
 - ./configure && sudo make install
-
+- cd ..
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh

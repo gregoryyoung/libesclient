@@ -7,6 +7,10 @@
     <include filename = "license.xml" />
     <target name = "travis" />
     <use project = "czmq" />
+    <use project = "protobuf-c"
+         repository = "https://github.com/protobuf-c/protobuf-c/"
+         test = "protobuf_c_version"
+         header = "protobuf-c/protobuf-c.h"/> 
     <actor name = "es_connection_actor" private = "1"/>
     <main name = "es_client_tests" private = "1"/>
 </project>

@@ -12,9 +12,10 @@ AM_CFLAGS = \
 AM_CPPFLAGS = \
     ${libzmq_CFLAGS} \
     ${czmq_CFLAGS} \
+    ${protobuf_c_CFLAGS} \
     -I$(srcdir)/include
 
-project_libs = ${libzmq_LIBS} ${czmq_LIBS}
+project_libs = ${libzmq_LIBS} ${czmq_LIBS} ${protobuf_c_LIBS}
 
 SUBDIRS = doc
 DIST_SUBDIRS = doc

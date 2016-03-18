@@ -22,7 +22,7 @@ addons:
     - git
 
 before_install:
-- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils valgrind ; fe
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils valgrind ; fi
 - sudo apt-get -qq update
 - sudo apt-get install -y  protobuf-compiler ibprotobuf-dev
 

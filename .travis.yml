@@ -24,7 +24,6 @@ addons:
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils valgrind ; fi
 - sudo apt-get -qq update
-- apt-get install build-essential
 - wget https://protobuf.googlecode.com/svn/rc/protobuf-2.6.0.tar.gz
 - tar xvfz protobuf-2.6.0.tar.gz
 - cd protobuf-2.6.0

@@ -42,6 +42,7 @@ typedef struct {
 
 static test_item_t
 all_tests [] = {
+    { "es_frame", es_frame_test },
     { "es_connection_actor", es_connection_actor_test },
     {0, 0}          //  Sentinel
 };
@@ -100,7 +101,7 @@ main (int argc, char **argv)
         else
         if (streq (argv [argn], "--number")
         ||  streq (argv [argn], "-n")) {
-            puts ("2");
+            puts ("3");
             return 0;
         }
         else
@@ -108,6 +109,7 @@ main (int argc, char **argv)
         ||  streq (argv [argn], "-l")) {
             puts ("Available tests:");
             puts ("    es_proto");
+            puts ("    es_frame");
             puts ("    es_connection_actor");
             return 0;
         }

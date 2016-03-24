@@ -113,6 +113,7 @@ set (es_headers
     include/es_library.h
     include/esclient.h
     src/es_proto.h
+    src/es_frame.h
     src/es_connection_actor.h
 )
 
@@ -125,6 +126,7 @@ install(FILES ${es_headers} DESTINATION include)
 include_directories("${SOURCE_DIR}/src" "${SOURCE_DIR}/include")
 set (es_sources
     src/es_proto.c
+    src/es_frame.c
     src/es_connection_actor.c
 )
 source_group("Source Files" FILES ${es_sources})
@@ -215,6 +217,7 @@ set(TOTAL_TIMEOUT 20 CACHE STRING "Timout of the total testsuite")
 
 set(TEST_CLASSES
     es_proto
+    es_frame
     es_connection_actor
 )
 

@@ -28,6 +28,7 @@ TESTS =
 
 EXTRA_DIST = \
     src/es_proto.h \
+    src/es_frame.h \
     src/es_connection_actor.h \
     LICENSE \
     README.md \

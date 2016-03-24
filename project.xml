@@ -13,5 +13,6 @@
          header = "protobuf-c/protobuf-c.h"/> 
     <actor name = "es_connection_actor" private = "1"/>
     <main name = "es_client_tests" private = "1"/>
-    <class name = "es_proto" private = "1"/>
+    <class name = "es_proto" private = "1" notest="1"/>
+    <class name = "es_frame" private = "1" />
 </project>

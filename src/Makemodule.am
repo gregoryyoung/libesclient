@@ -18,6 +18,7 @@ include_HEADERS = \
 
 src_libes_la_SOURCES = \
     src/es_proto.c \
+    src/es_frame.c \
     src/es_connection_actor.c \
     src/platform.h
 

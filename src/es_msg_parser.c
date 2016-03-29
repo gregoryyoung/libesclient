@@ -22,8 +22,7 @@ struct Buffer {
     char *location;
 };
 
-struct Header *
-create_header (const char command, const char flags, const uuid_t correlation_id, const char *username, const char *password) {
+struct Header * create_header (const char command, const char flags, const uuid_t correlation_id, const char *username, const char *password) {
     struct Header *ret = malloc (sizeof (struct Header));
     ret->correlation_id = malloc (sizeof (uuid_t));
     ret->command = command;
@@ -36,8 +35,7 @@ create_header (const char command, const char flags, const uuid_t correlation_id
     return ret;
 }
 
-void
-destroy_header (struct Header **header) {
+void destroy_header (struct Header **header) {
     assert (header);
     if(*header) {
         struct Header *self = *header;
@@ -48,8 +46,7 @@ destroy_header (struct Header **header) {
     }
 }
 
-struct ParserState *
-create_parser_state (int buffer_size) {
+struct ParserState * create_parser_state (int buffer_size) {
     struct ParserState *ret = malloc ( sizeof ( struct ParserState));
     ret ->buffer_start = malloc (buffer_size);
     ret->buffer_end = ret->buffer_start + buffer_size;
@@ -58,8 +55,7 @@ create_parser_state (int buffer_size) {
     return ret;
 }
 
-void
-destroy_parser_state (struct ParserState **state) {
+void destroy_parser_state (struct ParserState **state) {
     assert (state);
     if (*state) {
         struct ParserState *self = *state;
@@ -76,8 +72,7 @@ destroy_parser_state (struct ParserState **state) {
 #define MANDATORYSIZE AUTHOFFSET
 
 
-int
-read_header (struct Buffer *buffer, struct Header **header) {
+int read_header (struct Buffer *buffer, struct Header **header) {
     //buffer has length prefix removed
     if (buffer->length < MANDATORYSIZE) return 0;
     char command = buffer->location[COMMANDOFFSET];
@@ -92,16 +87,14 @@ read_header (struct Buffer *buffer, struct Header **header) {
     return 1;
 }
 
-int32_t
-write_header (struct Header *header, char *buffer) {
+int32_t write_header (struct Header *header, char *buffer) {
     buffer[COMMANDOFFSET] = header->command;
     buffer[FLAGSOFFSET] = header->flags;
     write_uuid_to_wtf (*(header->correlation_id), buffer + CORRELATIONOFFSET);
     return AUTHOFFSET;
 }
 
-char *
-get_string_for_header(struct Header *header) {
+char * get_string_for_header(struct Header *header) {
     char *ret = malloc(1024);
     char uuid_str[37];
     char *cmd_str = get_string_for_tcp_message(header->command);
@@ -110,8 +103,7 @@ get_string_for_header(struct Header *header) {
     return ret;
 }
 
-struct Buffer *
-read_next (struct ParserState *state) {
+struct Buffer *read_next (struct ParserState *state) {
     assert (state);
     int32_t length = 0;
     if(state->buffer_write - state->parser_read < 4) return NULL;
@@ -127,8 +119,7 @@ read_next (struct ParserState *state) {
     return ret;
 }
 
-int32_t
-add_data(struct ParserState *state, struct Buffer *data) {
+int32_t add_data(struct ParserState *state, struct Buffer *data) {
     assert (state);
     assert (data);
     if (data->length > 0) {
@@ -141,8 +132,7 @@ add_data(struct ParserState *state, struct Buffer *data) {
     return 0;
 }
 
-void
-compress_space(struct ParserState *state) {
+void compress_space(struct ParserState *state) {
     assert (state);
     if (state->parser_read == state->buffer_start) return;
     int length = state->buffer_write - state->parser_read;
@@ -156,8 +146,7 @@ compress_space(struct ParserState *state) {
 
 
 
-static void
-test_add_data (void) {
+static void test_add_data (void) {
     char data[16] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'};
     struct ParserState *state = create_parser_state(32);
     CU_ASSERT_PTR_NOT_NULL (state->buffer_end);
@@ -182,8 +171,7 @@ test_add_data (void) {
     destroy_parser_state (&state);
 }
 
-static void
-test_compress (void) {
+static void test_compress (void) {
     struct ParserState *state = create_parser_state(4096);
     char data[24] = {0x0A,0,0,0,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
     struct Buffer b;
@@ -213,8 +201,7 @@ test_compress (void) {
     destroy_parser_state (&state);
 }
 
-static void
-test_read (void) {
+static void test_read (void) {
     struct ParserState *state = create_parser_state(4096);
     char data[24] = {0x0A,0,0,0,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
     struct Buffer b;
@@ -252,8 +239,7 @@ test_read (void) {
     free (ret);
 }
 
-int
-register_es_msg_tests() {
+int register_es_msg_tests() {
     CU_pSuite pSuite = NULL;
     pSuite = CU_add_suite("parser tests", NULL, NULL);
     if (NULL == pSuite) {

@@ -3,8 +3,7 @@
 
 static int net_order[16] = {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15};
 
-uuid_t *
-get_uuid_from_wtf (char *wtf_data) {
+uuid_t * get_uuid_from_wtf (char *wtf_data) {
     char *ret = malloc (sizeof (uuid_t));
     for(int i=0;i<16;i++) {
         ret[i] = wtf_data[net_order[i]];
@@ -12,15 +11,13 @@ get_uuid_from_wtf (char *wtf_data) {
     return (uuid_t *)ret;
 }
 
-void
-write_uuid_to_wtf (uuid_t uuid, char *wtf_data) {
+void write_uuid_to_wtf (uuid_t uuid, char *wtf_data) {
     for(int i=0;i<16;i++) {
         wtf_data[net_order[i]] = uuid[i];
     }
 }
 
-void
-test_read_wtf_uuid() {
+void test_read_wtf_uuid() {
     char uuid_str[37];
     char data[16] = {0x46, 0x6c,0xbc, 0x3e, 0x72,0xe2, 0x26, 0x42, 0xbc,0xb5,0xaa,0x93,0xc4,0x11,0xed,0x0d };
     char *expected = "3ebc6c46-e272-4226-bcb5-aa93c411ed0d";
@@ -34,8 +31,7 @@ test_read_wtf_uuid() {
     CU_ASSERT(strcmp(uuid_str, expected) == 0);
 }
 
-void
-test_write_wtf_uuid() {
+void test_write_wtf_uuid() {
     uuid_t uuid;
     char temp[37];
     char output[16];
@@ -51,8 +47,7 @@ test_write_wtf_uuid() {
     }
 }
 
-int
-register_wtf_uuid_tests() {
+int register_wtf_uuid_tests() {
    CU_pSuite pSuite = NULL;
     pSuite = CU_add_suite("wtf uuid tests", NULL, NULL);
     if (NULL == pSuite) {

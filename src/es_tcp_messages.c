@@ -1,8 +1,7 @@
 #include <stdint.h>
 #include "es_client_internal.h"
 
-char *
-get_string_for_tcp_message(uint8_t message) {
+char * get_string_for_tcp_message(uint8_t message) {
 	switch(message)
 	{
 		case MESSAGE_HEARTBEATREQUEST : return "Heartbeat Request";

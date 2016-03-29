@@ -2,7 +2,6 @@
 #define ES_MSG_PARSER
 
 
-int
-register_es_msg_tests(void);
+int register_es_msg_tests(void);
 
 #endif

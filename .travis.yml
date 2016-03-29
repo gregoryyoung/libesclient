@@ -29,6 +29,7 @@ before_install:
 - cd protobuf-2.6.0
 - ./configure && sudo make install
 - cd ..
+- sudo apt-get install libcunit1 ibcunit1-dev
 - export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh

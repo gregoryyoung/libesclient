@@ -160,25 +160,25 @@ static void
 test_add_data (void) {
     char data[16] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'};
     struct ParserState *state = create_parser_state(32);
-    assert (state->buffer_end);
-    assert (state->buffer_start);
-    assert (state->parser_read == state->buffer_start);
-    assert (state->buffer_start == state->buffer_write);
+    CU_ASSERT_PTR_NOT_NULL (state->buffer_end);
+    CU_ASSERT_PTR_NOT_NULL (state->buffer_start);
+    CU_ASSERT (state->parser_read == state->buffer_start);
+    CU_ASSERT (state->buffer_start == state->buffer_write);
     //simple case
     struct Buffer b;
     b.length = 3;
     b.location = (char *) &data;
     char *old_buffer_start = state->buffer_start;
     char *old_buffer_end = state->buffer_end;
-    assert (add_data (state, &b) == 0);
-    assert (state->buffer_write - state->buffer_start == 3);
-    assert (state->parser_read == state->buffer_start);
-    assert (state->buffer_start == old_buffer_start);
-    assert (state->buffer_end == old_buffer_end);
+    CU_ASSERT (add_data (state, &b) == 0);
+    CU_ASSERT (state->buffer_write - state->buffer_start == 3);
+    CU_ASSERT (state->parser_read == state->buffer_start);
+    CU_ASSERT (state->buffer_start == old_buffer_start);
+    CU_ASSERT (state->buffer_end == old_buffer_end);
     b.length = 15;
-    assert (add_data (state,&b) == 0);
+    CU_ASSERT (add_data (state,&b) == 0);
     //overflow
-    assert (add_data (state,&b) == -1);
+    CU_ASSERT_EQUAL (add_data (state,&b), -1);
     destroy_parser_state (&state);
 }
 
@@ -193,23 +193,23 @@ test_compress (void) {
     //whole message
     add_data (state, &b);
     compress_space (state);
-    assert (state->parser_read == state->buffer_start);
-    assert (state->buffer_write - state->buffer_start == 14);
+    CU_ASSERT (state->parser_read == state->buffer_start);
+    CU_ASSERT (state->buffer_write - state->buffer_start == 14);
     b.length = 6;
     b.location[0] = 0x0B;
     add_data (state, &b);
     struct Buffer * read = read_next (state);
-    assert (read);
+    CU_ASSERT_PTR_NOT_NULL (read);
     assert (state->buffer_write - state->buffer_start == 20);
-    assert (state->parser_read == state->buffer_start + 14);
+    CU_ASSERT_EQUAL (state->parser_read, state->buffer_start + 14);
     compress_space (state);
-    assert (state->parser_read == state->buffer_start);
-    assert (state->buffer_write - state->buffer_start == 6);
-    assert (original_start == state->buffer_start);
-    assert (state->buffer_start[0] == 0x0B);
-    assert (state->buffer_start[1] == 0);
-    assert (state->buffer_start[2] == 0);
-    assert (state->buffer_start[3] == 0);
+    CU_ASSERT_EQUAL (state->parser_read, state->buffer_start);
+    CU_ASSERT_EQUAL (state->buffer_write - state->buffer_start, 6);
+    CU_ASSERT_EQUAL (original_start, state->buffer_start);
+    CU_ASSERT_EQUAL (state->buffer_start[0], 0x0B);
+    CU_ASSERT_EQUAL (state->buffer_start[1], 0);
+    CU_ASSERT_EQUAL (state->buffer_start[2], 0);
+    CU_ASSERT_EQUAL (state->buffer_start[3], 0);
     destroy_parser_state (&state);
 }
 
@@ -222,32 +222,32 @@ test_read (void) {
     b.length = 6;
     b.location = (char *) &data;
     char *old_parser_read = state->parser_read;
-    assert (add_data (state, &b) == 0);
-    assert (read_next (state) == NULL);
-    assert (old_parser_read == state->parser_read);
+    CU_ASSERT_EQUAL (add_data (state, &b), 0);
+    CU_ASSERT_EQUAL (read_next (state), NULL);
+    CU_ASSERT (old_parser_read == state->parser_read);
     destroy_parser_state (&state);
 
     //perfect fit
     state = create_parser_state (4096);
     b.length = 14;
-    assert (add_data (state, &b) == 0);
+    CU_ASSERT_EQUAL (add_data (state, &b), 0);
     struct  Buffer *ret = read_next (state);
-    assert (ret);
-    assert (ret->location == state->buffer_start + 4);
-    assert (ret->length == 10);
-    assert (old_parser_read + 14 == state->parser_read);
+    CU_ASSERT_PTR_NOT_NULL (ret);
+    CU_ASSERT (ret->location == state->buffer_start + 4);
+    CU_ASSERT_EQUAL (ret->length,10);
+    CU_ASSERT (old_parser_read + 14 == state->parser_read);
     destroy_parser_state (&state);
     free (ret);
 
     //more than enough
     state = create_parser_state (4096);
     b.length = 20;
-    assert (add_data (state, &b) == 0);
+    CU_ASSERT_EQUAL (add_data (state, &b), 0);
     ret = read_next (state);
-    assert (ret);
-    assert (ret->location == state->buffer_start + 4);
-    assert (ret->length == 10);
-    assert (old_parser_read + 14 == state->parser_read);
+    CU_ASSERT_PTR_NOT_NULL (ret);
+    CU_ASSERT (ret->location == state->buffer_start + 4);
+    CU_ASSERT_EQUAL (ret->length,10);
+    CU_ASSERT (old_parser_read + 14 == state->parser_read);
     destroy_parser_state (&state);
     free (ret);
 }

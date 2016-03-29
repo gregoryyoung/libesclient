@@ -87,7 +87,7 @@ int read_header (struct Buffer *buffer, struct Header **header) {
     return 1;
 }
 
-int32_t write_header (struct Header *header, char *buffer) {
+int32_t write_header (struct Header *header, unsigned char *buffer) {
     buffer[COMMANDOFFSET] = header->command;
     buffer[FLAGSOFFSET] = header->flags;
     write_uuid_to_wtf (*(header->correlation_id), buffer + CORRELATIONOFFSET);

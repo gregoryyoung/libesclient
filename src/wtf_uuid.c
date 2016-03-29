@@ -11,7 +11,7 @@ uuid_t * get_uuid_from_wtf (char *wtf_data) {
     return (uuid_t *)ret;
 }
 
-void write_uuid_to_wtf (uuid_t uuid, char *wtf_data) {
+void write_uuid_to_wtf (uuid_t uuid, unsigned char *wtf_data) {
     for(int i=0;i<16;i++) {
         wtf_data[net_order[i]] = uuid[i];
     }
@@ -34,7 +34,7 @@ void test_read_wtf_uuid() {
 void test_write_wtf_uuid() {
     uuid_t uuid;
     char temp[37];
-    char output[16];
+    unsigned char output[16];
     uuid_parse("3ebc6c46-e272-4226-bcb5-aa93c411ed0d", uuid);
     uuid_unparse(uuid, temp);
 

@@ -13,7 +13,8 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <uuid/uuid.h>
-#include "tcp_messages.h"
+#include "es_tcp_messages.h"
+#include "wtf_uuid.h"
 
 struct ParserState {
     char *parser_read;

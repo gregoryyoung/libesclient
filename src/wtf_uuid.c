@@ -1,3 +1,8 @@
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+#include <uuid/uuid.h>
+
 static int net_order[16] = {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15};
 
 uuid_t *
@@ -17,7 +22,7 @@ write_uuid_to_wtf (uuid_t uuid, char *wtf_data) {
 }
 
 
-static void
+void
 test_read_wtf_uuid() {
     char uuid_str[37];
     char data[16] = {0x46, 0x6c,0xbc, 0x3e, 0x72,0xe2, 0x26, 0x42, 0xbc,0xb5,0xaa,0x93,0xc4,0x11,0xed,0x0d };
@@ -32,7 +37,7 @@ test_read_wtf_uuid() {
     assert(strcmp(uuid_str, expected) == 0);
 }
 
-static void
+void
 test_write_wtf_uuid() {
     uuid_t uuid;
     char temp[37];

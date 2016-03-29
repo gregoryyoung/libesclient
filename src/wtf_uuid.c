@@ -43,7 +43,7 @@ void test_write_wtf_uuid() {
 
     uuid_unparse(output, temp);
     for(int i=0;i<16;i++) {
-        CU_ASSERT(output[i] == expected[i]);
+        CU_ASSERT(output[i] == (unsigned char) expected[i]);
     }
 }
 

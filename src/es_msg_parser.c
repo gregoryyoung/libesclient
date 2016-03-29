@@ -144,16 +144,18 @@ void compress_space(struct ParserState *state) {
 
 }
 
+char data[24] = {0x0A,0,0,0,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
 
-
-static void test_add_data (void) {
-    char data[16] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'};
+static void test_parser_create() {
     struct ParserState *state = create_parser_state(32);
     CU_ASSERT_PTR_NOT_NULL (state->buffer_end);
     CU_ASSERT_PTR_NOT_NULL (state->buffer_start);
     CU_ASSERT (state->parser_read == state->buffer_start);
-    CU_ASSERT (state->buffer_start == state->buffer_write);
-    //simple case
+    CU_ASSERT (state->buffer_start == state->buffer_write);    
+}
+
+static void test_normal_add_data (void) {
+    struct ParserState *state = create_parser_state(32);
     struct Buffer b;
     b.length = 3;
     b.location = (char *) &data;
@@ -164,20 +166,28 @@ static void test_add_data (void) {
     CU_ASSERT (state->parser_read == state->buffer_start);
     CU_ASSERT (state->buffer_start == old_buffer_start);
     CU_ASSERT (state->buffer_end == old_buffer_end);
+    destroy_parser_state (&state);
+}
+
+static void test_overflow_add_data (void) {
+    struct ParserState *state = create_parser_state(32);
+    struct Buffer b;
+    b.length = 3;
+    b.location = (char *) &data;
+    CU_ASSERT (add_data (state, &b) == 0);
     b.length = 15;
     CU_ASSERT (add_data (state,&b) == 0);
     //overflow
     CU_ASSERT_EQUAL (add_data (state,&b), -1);
-    destroy_parser_state (&state);
 }
 
 static void test_compress (void) {
+    char ldata[24] = {0x0A,0,0,0,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
     struct ParserState *state = create_parser_state(4096);
-    char data[24] = {0x0A,0,0,0,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
     struct Buffer b;
     char *original_start = state->buffer_start;
     b.length = 14;
-    b.location = (char *) &data;
+    b.location = (char *) &ldata;
     //whole message
     add_data (state, &b);
     compress_space (state);
@@ -201,11 +211,9 @@ static void test_compress (void) {
     destroy_parser_state (&state);
 }
 
-static void test_read (void) {
+static void test_too_short_read (void) {
     struct ParserState *state = create_parser_state(4096);
-    char data[24] = {0x0A,0,0,0,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
     struct Buffer b;
-    //too short
     b.length = 6;
     b.location = (char *) &data;
     char *old_parser_read = state->parser_read;
@@ -213,11 +221,15 @@ static void test_read (void) {
     CU_ASSERT_EQUAL (read_next (state), NULL);
     CU_ASSERT (old_parser_read == state->parser_read);
     destroy_parser_state (&state);
+}
 
-    //perfect fit
-    state = create_parser_state (4096);
+static void test_perfect_fit_read (void) {
+    struct ParserState *state = create_parser_state (4096);
+    struct Buffer b;
+    b.location = (char *) &data;
     b.length = 14;
     CU_ASSERT_EQUAL (add_data (state, &b), 0);
+    char *old_parser_read = state->parser_read;
     struct  Buffer *ret = read_next (state);
     CU_ASSERT_PTR_NOT_NULL (ret);
     CU_ASSERT (ret->location == state->buffer_start + 4);
@@ -225,12 +237,16 @@ static void test_read (void) {
     CU_ASSERT (old_parser_read + 14 == state->parser_read);
     destroy_parser_state (&state);
     free (ret);
+}
 
-    //more than enough
-    state = create_parser_state (4096);
+static void test_too_much_data_read (void) {
+    struct ParserState *state = create_parser_state (4096);
+    struct Buffer b;
     b.length = 20;
+    b.location = (char *) &data;
     CU_ASSERT_EQUAL (add_data (state, &b), 0);
-    ret = read_next (state);
+    char *old_parser_read = state->parser_read;
+    struct  Buffer *ret = read_next (state);
     CU_ASSERT_PTR_NOT_NULL (ret);
     CU_ASSERT (ret->location == state->buffer_start + 4);
     CU_ASSERT_EQUAL (ret->length,10);
@@ -248,8 +264,12 @@ int register_es_msg_tests() {
     }
 
     if ((NULL == CU_add_test(pSuite, "test of compess", test_compress)) ||
-        (NULL == CU_add_test(pSuite, "test add_data", test_add_data))||
-        (NULL == CU_add_test(pSuite, "test read", test_read))||
+        (NULL == CU_add_test(pSuite, "test parser create", test_parser_create))||
+        (NULL == CU_add_test(pSuite, "test normal add data", test_normal_add_data))||
+        (NULL == CU_add_test(pSuite, "test overflow add data", test_overflow_add_data))||
+        (NULL == CU_add_test(pSuite, "test read too short", test_too_short_read))||
+        (NULL == CU_add_test(pSuite, "test read perfect fit", test_perfect_fit_read))||
+        (NULL == CU_add_test(pSuite, "test read too much data", test_too_much_data_read))||
         0)
     {
        CU_cleanup_registry();

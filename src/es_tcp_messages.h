@@ -1,5 +1,6 @@
 #ifndef ES_TCP_MESSAGES
 #define ES_TCP_MESSAGES
+#include <stdint.h>
 
 #define MESSAGE_HEARTBEATREQUEST 0x01
 #define MESSAGE_HEARTBEATRESPONSE 0x02

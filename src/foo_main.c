@@ -12,7 +12,6 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <uuid/uuid.h>
 #include "es_client_internal.h"
 
 struct ParserState {
@@ -266,7 +265,7 @@ test_read (void) {
 }
 
 int
-main(int argc, char *argv[])
+not_main(int argc, char *argv[])
 {
     int sockfd = 0, n = 0;
     char recv_buf[1024];

@@ -3,7 +3,7 @@ LIBS = -lm -lcunit -luuid
 CC = gcc
 CFLAGS = -g -Wall
 
-.PHONY: all clean default
+.PHONY: all clean test default
 
 default: $(TARGET)
 all: default
@@ -22,4 +22,5 @@ $(TARGET): $(OBJECTS)
 clean:
 	-rm -f *.o
 	-rm -f $(TARGET)
-
+test:
+	./es_tests

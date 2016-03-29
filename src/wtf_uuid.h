@@ -1,6 +1,6 @@
 #ifndef WTF_UUID
 #define WTF_UUID
-
+#include <uuid/uuid.h>
 uuid_t *
 get_uuid_from_wtf (char *wtf_data) ;
 

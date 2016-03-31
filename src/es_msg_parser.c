@@ -77,11 +77,11 @@ int read_header (struct Buffer *buffer, struct Header **header) {
     if (buffer->length < MANDATORYSIZE) return 0;
     char command = buffer->location[COMMANDOFFSET];
     char flags = buffer->location[FLAGSOFFSET];
-    uuid_t *correlation_id = get_uuid_from_wtf(buffer->location + CORRELATIONOFFSET);
+    uuid_t correlation_id;
+    get_uuid_from_wtf(correlation_id, buffer->location + CORRELATIONOFFSET);
     char *username = NULL;
     char *password = NULL;
-    struct Header *local = create_header(command, flags, *correlation_id, username, password);
-    free (correlation_id);
+    struct Header *local = create_header(command, flags, correlation_id, username, password);
     *header = local;
 
     return 1;

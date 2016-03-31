@@ -3,9 +3,9 @@
 #include <uuid/uuid.h>
 
 
-uuid_t * get_uuid_from_wtf (char *wtf_data) ;
+void get_uuid_from_wtf (uuid_t dst, const char *wtf_data);
 
-void write_uuid_to_wtf (uuid_t uuid, unsigned char *wtf_data) ;
+void write_uuid_to_wtf (uuid_t uuid, unsigned char *wtf_data);
 
 int register_wtf_uuid_tests();
 

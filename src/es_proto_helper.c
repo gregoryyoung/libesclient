@@ -79,7 +79,6 @@ struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
 	ret->require_master = msg->require_master;
 	ret->hard_delete = false;
 	if(msg->has_hard_delete) {
-		printf ("msg has hard delete!\n");
 		ret->hard_delete = msg->hard_delete;
 	}
 	event_store__client__messages__delete_stream__free_unpacked (msg, NULL);

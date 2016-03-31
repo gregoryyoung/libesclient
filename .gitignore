@@ -1,3 +1,4 @@
+
 save.xml
 # Object files
 *.o
@@ -19,7 +20,6 @@ save.xml
 *.lo
 
 # Executables
-src/libesclient_selftest
 src/es_selftest
 *.exe
 *.out

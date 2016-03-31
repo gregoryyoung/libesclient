@@ -15,6 +15,14 @@ struct DeleteStream {
 	bool hard_delete;
 };
 
+void destroy_delete_stream(struct DeleteStream **item) {
+	assert(item);
+	struct DeleteStream *self = *item;
+	if (self->event_stream_id) free(self->event_stream_id);
+	free (self);
+	*item = NULL;
+}
+
 int es_pack_delete_stream(struct DeleteStream *delete, struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStream msg = EVENT_STORE__CLIENT__MESSAGES__DELETE_STREAM__INIT;
 	unsigned len;
@@ -69,6 +77,7 @@ void test_delete_stream (void) {
 	CU_ASSERT_EQUAL (d.expected_version, -1);
 	CU_ASSERT (d.require_master);
 	CU_ASSERT (d.hard_delete);
+	destroy_delete_stream (&msg);
 	free(buffer.location);
 }
 

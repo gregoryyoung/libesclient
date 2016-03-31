@@ -103,7 +103,7 @@ char * get_string_for_header(struct Header *header) {
     return ret;
 }
 
-struct Buffer *read_next (struct ParserState *state) {
+struct Buffer * read_next (struct ParserState *state) {
     assert (state);
     int32_t length = 0;
     if(state->buffer_write - state->parser_read < 4) return NULL;
@@ -151,7 +151,8 @@ static void test_parser_create() {
     CU_ASSERT_PTR_NOT_NULL (state->buffer_end);
     CU_ASSERT_PTR_NOT_NULL (state->buffer_start);
     CU_ASSERT (state->parser_read == state->buffer_start);
-    CU_ASSERT (state->buffer_start == state->buffer_write);    
+    CU_ASSERT (state->buffer_start == state->buffer_write);
+    destroy_parser_state (&state);
 }
 
 static void test_normal_add_data (void) {
@@ -179,6 +180,7 @@ static void test_overflow_add_data (void) {
     CU_ASSERT (add_data (state,&b) == 0);
     //overflow
     CU_ASSERT_EQUAL (add_data (state,&b), -1);
+    destroy_parser_state (&state);
 }
 
 static void test_compress (void) {
@@ -209,6 +211,7 @@ static void test_compress (void) {
     CU_ASSERT_EQUAL (state->buffer_start[2], 0);
     CU_ASSERT_EQUAL (state->buffer_start[3], 0);
     destroy_parser_state (&state);
+    free (read);
 }
 
 static void test_too_short_read (void) {

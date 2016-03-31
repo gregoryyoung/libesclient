@@ -4,7 +4,7 @@
 static int net_order[16] = {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15};
 
 uuid_t * get_uuid_from_wtf (char *wtf_data) {
-    char *ret = malloc (sizeof (uuid_t));
+    uint8_t *ret = malloc (sizeof (uuid_t));
     for(int i=0;i<16;i++) {
         ret[i] = wtf_data[net_order[i]];
     }
@@ -29,6 +29,7 @@ void test_read_wtf_uuid() {
     uuid = get_uuid_from_wtf (data1);
     uuid_unparse(*uuid, uuid_str);
     CU_ASSERT(strcmp(uuid_str, expected) == 0);
+    free(uuid);
 }
 
 void test_write_wtf_uuid() {

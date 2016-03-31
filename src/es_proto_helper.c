@@ -15,9 +15,8 @@ struct DeleteStream {
 	bool hard_delete;
 };
 
-struct Buffer es_pack_delete_stream(struct DeleteStream delete) {
+int es_pack_delete_stream(struct DeleteStream delete, struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStream msg = EVENT_STORE__CLIENT__MESSAGES__DELETE_STREAM__INIT;
-	void *buf;
 	unsigned len;
 
 	msg.event_stream_id = delete.event_stream_id;
@@ -25,13 +24,10 @@ struct Buffer es_pack_delete_stream(struct DeleteStream delete) {
 	msg.require_master = delete.require_master;
 	msg.hard_delete = delete.hard_delete;
 	len = event_store__client__messages__delete_stream__get_packed_size(&msg);
-
-	buf = malloc(len);
-	event_store__client__messages__delete_stream__pack(&msg,buf);
-	struct Buffer buffer;
-	buffer.length = len;
-	buffer.location = buf;
-	return buffer;
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__delete_stream__pack(&msg,buffer.location);
+	return len;
 }
 
 struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
@@ -50,16 +46,30 @@ struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
 	return ret;
 }
 
+struct Buffer get_test_buffer(int size) {
+	struct Buffer buffer;
+	buffer.location = malloc(size);
+	buffer.length = size;
+	return buffer;
+}
+
 void test_delete_stream (void) {
 	struct DeleteStream d;
 	d.event_stream_id = "testing";
-	d.expected_version = -3;
+	d.expected_version = -1;
 	d.require_master = true;
 	d.hard_delete = true;
-	struct Buffer buffer = es_pack_delete_stream (d);
+	struct Buffer buffer = get_test_buffer(1024);
+	int len = es_pack_delete_stream (d, buffer);
+	buffer.length = len;
 	struct DeleteStream *msg;
 	msg = es_unpack_delete_stream (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
 	CU_ASSERT_STRING_EQUAL ("testing", msg->event_stream_id);
+	CU_ASSERT_EQUAL (d.expected_version, -1);
+	CU_ASSERT (d.require_master);
+	CU_ASSERT (d.hard_delete);
+	free(buffer.location);
 }
 
 int register_es_proto_helper_tests() {

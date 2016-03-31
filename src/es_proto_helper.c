@@ -137,7 +137,7 @@ void test_subscribe_to_stream (void) {
 
 int register_es_proto_helper_tests() {
    CU_pSuite pSuite = NULL;
-    pSuite = CU_add_suite("proto serialiation tests", NULL, NULL);
+    pSuite = CU_add_suite("proto serialization tests", NULL, NULL);
     if (NULL == pSuite) {
        CU_cleanup_registry();
        return CU_get_error();

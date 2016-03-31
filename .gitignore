@@ -20,7 +20,7 @@ save.xml
 *.lo
 
 # Executables
-src/es_selftest
+es_tests
 *.exe
 *.out
 *.app

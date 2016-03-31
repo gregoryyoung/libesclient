@@ -6,7 +6,7 @@
 #define PROTOBUF_C__NO_DEPRECATED
 #endif
 
-#include "ClientMessageDtos.pb-c.h"
+#include "es_proto.h"
 void   event_store__client__messages__new_event__init
                      (EventStore__Client__Messages__NewEvent         *message)
 {

@@ -1,4 +1,3 @@
-#include <string.h>
 #include "es_proto.h"
 #include "es_client_internal.h"
 
@@ -27,6 +26,14 @@ struct DeleteStream {
 struct SubscribeToStream {
 	char *event_stream_id;
 	bool resolve_link_tos;
+};
+
+struct WriteEvents {
+	char *event_stream_id;
+	int32_t expected_version;
+	int32_t num_events;
+	bool require_master;
+	struct NewEvent *events;
 };
 
 void destroy_delete_stream(struct DeleteStream **item) {
@@ -69,6 +76,15 @@ struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
 	return ret;
 }
 
+
+void destroy_subscribe_to_stream(struct SubscribeToStream **item) {
+	assert(item);
+	struct SubscribeToStream *self = *item;
+	if (self->event_stream_id) free(self->event_stream_id);
+	free (self);
+	*item = NULL;
+}
+
 int es_pack_subscribe_to_stream(struct SubscribeToStream *subscribe, struct Buffer buffer) {
 	EventStore__Client__Messages__SubscribeToStream msg = EVENT_STORE__CLIENT__MESSAGES__SUBSCRIBE_TO_STREAM__INIT;
 	unsigned len;
@@ -83,14 +99,6 @@ int es_pack_subscribe_to_stream(struct SubscribeToStream *subscribe, struct Buff
 	return len;
 }
 
-void destroy_subscribe_to_stream(struct SubscribeToStream **item) {
-	assert(item);
-	struct SubscribeToStream *self = *item;
-	if (self->event_stream_id) free(self->event_stream_id);
-	free (self);
-	*item = NULL;
-}
-
 struct SubscribeToStream *es_unpack_subscribe_to_stream(struct Buffer buffer) {
 	EventStore__Client__Messages__SubscribeToStream *msg;
 	msg = event_store__client__messages__subscribe_to_stream__unpack(NULL, buffer.length, buffer.location);
@@ -100,6 +108,50 @@ struct SubscribeToStream *es_unpack_subscribe_to_stream(struct Buffer buffer) {
 	ret->resolve_link_tos = msg->resolve_link_tos;
 	event_store__client__messages__subscribe_to_stream__free_unpacked (msg, NULL);
 	return ret;
+}
+
+void destroy_write_events(struct WriteEvents **item) {
+	assert(item);
+	struct WriteEvents *self = *item;
+	if (self->event_stream_id) free(self->event_stream_id);
+	free (self);
+	*item = NULL;
+}
+
+
+int es_pack_write_events(struct WriteEvents *write, struct Buffer buffer) {
+	EventStore__Client__Messages__WriteEvents msg = EVENT_STORE__CLIENT__MESSAGES__WRITE_EVENTS__INIT;
+	unsigned len;
+
+	assert (write);
+	assert (write->num_events >= 0);
+	msg.event_stream_id = write->event_stream_id;
+	msg.expected_version = write->expected_version;
+	msg.require_master = write->require_master;
+	msg.events = malloc (sizeof (struct EventStore__Client__Messages__NewEvent *) * write->num_events);
+	for(int i=0; i<write->num_events; i++) {
+		struct NewEvent *cur = &write->events[i];
+		assert (cur->data.location);
+		assert (cur->data.length > 0);
+		EventStore__Client__Messages__NewEvent ev = EVENT_STORE__CLIENT__MESSAGES__NEW_EVENT__INIT;
+		ev.data_content_type = cur->data_content_type;
+		ev.metadata_content_type = cur->metadata_content_type;
+		ev.data.data = cur->data.location;
+		ev.data.len = cur->data.length;
+		if(cur->metadata.length > 0) {
+			ev.metadata.data = cur->metadata.location;
+			ev.metadata.len = cur->metadata.length;
+		}
+		msg.events[i] = &ev;
+	}
+	len = event_store__client__messages__write_events__get_packed_size (&msg);
+	if (len > buffer.length) {
+		free (msg.events);
+		return 0;
+	}
+	event_store__client__messages__write_events__pack (&msg, buffer.location);
+	free (msg.events);
+	return 0;
 }
 
 struct Buffer get_test_buffer(int size) {
@@ -127,7 +179,6 @@ void test_delete_stream (void) {
 	destroy_delete_stream (&msg);
 	free(buffer.location);
 }
-
 
 void test_subscribe_to_stream (void) {
 	struct SubscribeToStream d;

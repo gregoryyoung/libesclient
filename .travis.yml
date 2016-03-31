@@ -35,7 +35,7 @@ before_install:
 - git clone https://github.com/protobuf-c/protobuf-c
 - cd protobuf-c
 - ./autogen.sh
-- /configure
+- ./configure
 - make
 - sudo make install
 - cd ..

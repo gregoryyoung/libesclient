@@ -36,6 +36,14 @@ struct WriteEvents {
 	struct NewEvent *events;
 };
 
+struct ReadStreamEvents {
+	char *event_stream_id;
+	uint32_t from_event_number;
+	uint32_t max_count;
+	bool resolve_link_tos;
+	bool require_master;
+};
+
 void destroy_delete_stream(struct DeleteStream **item) {
 	assert(item);
 	struct DeleteStream *self = *item;
@@ -52,6 +60,7 @@ int es_pack_delete_stream(struct DeleteStream *delete, struct Buffer buffer) {
 	msg.event_stream_id = delete->event_stream_id;
 	msg.expected_version = delete->expected_version;
 	msg.require_master = delete->require_master;
+	msg.has_hard_delete = true;
 	msg.hard_delete = delete->hard_delete;
 	len = event_store__client__messages__delete_stream__get_packed_size (&msg);
 	if (len > buffer.length)
@@ -68,8 +77,9 @@ struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
 	ret->event_stream_id = strdup (msg->event_stream_id);
 	ret->expected_version = msg->expected_version;
 	ret->require_master = msg->require_master;
-	ret->hard_delete = true;
+	ret->hard_delete = false;
 	if(msg->has_hard_delete) {
+		printf ("msg has hard delete!\n");
 		ret->hard_delete = msg->hard_delete;
 	}
 	event_store__client__messages__delete_stream__free_unpacked (msg, NULL);
@@ -154,6 +164,49 @@ int es_pack_write_events(struct WriteEvents *write, struct Buffer buffer) {
 	return 0;
 }
 
+
+void destroy_read_stream_events(struct ReadStreamEvents **item) {
+	assert(item);
+	struct ReadStreamEvents *self = *item;
+	if (self->event_stream_id) free(self->event_stream_id);
+	free (self);
+	*item = NULL;
+}
+
+
+int es_pack_read_stream_events(struct ReadStreamEvents *read, struct Buffer buffer) {
+	EventStore__Client__Messages__ReadStreamEvents msg = EVENT_STORE__CLIENT__MESSAGES__READ_STREAM_EVENTS__INIT;
+	unsigned len;
+
+	assert (read);
+	assert (read->event_stream_id);
+	msg.event_stream_id = read->event_stream_id;
+	msg.from_event_number = read->from_event_number;
+	msg.max_count = read->max_count;
+	msg.resolve_link_tos = read->resolve_link_tos;
+	msg.require_master = read->require_master;
+	len = event_store__client__messages__read_stream_events__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__read_stream_events__pack (&msg,buffer.location);
+	return len;
+}
+
+struct ReadStreamEvents *es_unpack_read_stream_events(struct Buffer buffer) {
+	EventStore__Client__Messages__ReadStreamEvents *msg;
+	msg = event_store__client__messages__read_stream_events__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct ReadStreamEvents *ret = malloc (sizeof (struct ReadStreamEvents));
+	ret->event_stream_id = strdup (msg->event_stream_id);
+	ret->from_event_number = msg->from_event_number;
+	ret->require_master = msg->require_master;
+	ret->resolve_link_tos = msg->resolve_link_tos;
+	ret->max_count = msg->max_count;
+	event_store__client__messages__read_stream_events__free_unpacked (msg, NULL);
+	return ret;
+}
+
+
 struct Buffer get_test_buffer(int size) {
 	struct Buffer buffer;
 	buffer.location = malloc(size);
@@ -168,16 +221,16 @@ void test_delete_stream (void) {
 	d.require_master = true;
 	d.hard_delete = true;
 	struct Buffer buffer = get_test_buffer(1024);
-	int len = es_pack_delete_stream (&d, buffer);
+	int32_t len = es_pack_delete_stream (&d, buffer);
 	buffer.length = len;
 	struct DeleteStream *msg = es_unpack_delete_stream (buffer);
 	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
 	CU_ASSERT_STRING_EQUAL ("testing", msg->event_stream_id);
-	CU_ASSERT_EQUAL (d.expected_version, -1);
-	CU_ASSERT (d.require_master);
-	CU_ASSERT (d.hard_delete);
+	CU_ASSERT_EQUAL (msg->expected_version, -1);
+	CU_ASSERT (msg->require_master);
+	CU_ASSERT (msg->hard_delete);
 	destroy_delete_stream (&msg);
-	free(buffer.location);
+	free (buffer.location);
 }
 
 void test_subscribe_to_stream (void) {
@@ -185,14 +238,35 @@ void test_subscribe_to_stream (void) {
 	d.event_stream_id = "testing";
 	d.resolve_link_tos = true;
 	struct Buffer buffer = get_test_buffer(1024);
-	int len = es_pack_subscribe_to_stream (&d, buffer);
+	int32_t len = es_pack_subscribe_to_stream (&d, buffer);
 	buffer.length = len;
 	struct SubscribeToStream *msg = es_unpack_subscribe_to_stream (buffer);
 	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
 	CU_ASSERT_STRING_EQUAL ("testing", msg->event_stream_id);
-	CU_ASSERT (d.resolve_link_tos);
+	CU_ASSERT (msg->resolve_link_tos);
 	destroy_subscribe_to_stream (&msg);
-	free(buffer.location);
+	free (buffer.location);
+}
+
+void test_read_stream_events (void) {
+	struct ReadStreamEvents r;
+	r.event_stream_id = "testing";
+	r.from_event_number = 19;
+	r.max_count = 10;
+	r.require_master = true;
+	r.resolve_link_tos = true;
+	struct Buffer buffer = get_test_buffer (1024);
+	int32_t len = es_pack_read_stream_events (&r, buffer);
+	buffer.length = len;
+	struct ReadStreamEvents *msg = es_unpack_read_stream_events (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_STRING_EQUAL ("testing", msg->event_stream_id);
+	CU_ASSERT_EQUAL (19, msg->from_event_number);
+	CU_ASSERT_EQUAL (10, msg->max_count);
+	CU_ASSERT (msg->resolve_link_tos);
+	CU_ASSERT (msg->require_master);
+	destroy_read_stream_events (&msg);
+	free (buffer.location);
 }
 
 int register_es_proto_helper_tests() {
@@ -205,6 +279,7 @@ int register_es_proto_helper_tests() {
 
     if ((NULL == CU_add_test(pSuite, "test proto DeleteStream", test_delete_stream)) ||
         (NULL == CU_add_test(pSuite, "test proto SubscribeToStream", test_subscribe_to_stream))||
+        (NULL == CU_add_test(pSuite, "test proto ReadStreamEvents", test_read_stream_events))||
         0)
     {
        CU_cleanup_registry();

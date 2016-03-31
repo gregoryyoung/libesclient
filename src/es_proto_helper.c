@@ -15,14 +15,14 @@ struct DeleteStream {
 	bool hard_delete;
 };
 
-int es_pack_delete_stream(struct DeleteStream delete, struct Buffer buffer) {
+int es_pack_delete_stream(struct DeleteStream *delete, struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStream msg = EVENT_STORE__CLIENT__MESSAGES__DELETE_STREAM__INIT;
 	unsigned len;
 
-	msg.event_stream_id = delete.event_stream_id;
-	msg.expected_version = delete.expected_version;
-	msg.require_master = delete.require_master;
-	msg.hard_delete = delete.hard_delete;
+	msg.event_stream_id = delete->event_stream_id;
+	msg.expected_version = delete->expected_version;
+	msg.require_master = delete->require_master;
+	msg.hard_delete = delete->hard_delete;
 	len = event_store__client__messages__delete_stream__get_packed_size(&msg);
 	if (len > buffer.length)
 		return 0;
@@ -60,7 +60,7 @@ void test_delete_stream (void) {
 	d.require_master = true;
 	d.hard_delete = true;
 	struct Buffer buffer = get_test_buffer(1024);
-	int len = es_pack_delete_stream (d, buffer);
+	int len = es_pack_delete_stream (&d, buffer);
 	buffer.length = len;
 	struct DeleteStream *msg;
 	msg = es_unpack_delete_stream (buffer);

@@ -3,7 +3,7 @@ LIBS = -lm -lcunit -luuid -lprotobuf-c
 CC = gcc
 CFLAGS = -g -Wall -std=c99
 
-.PHONY: all clean test default
+.PHONY: all clean test default valgrind
 
 default: $(TARGET)
 all: default
@@ -24,3 +24,6 @@ clean:
 	-rm -f $(TARGET)
 test:
 	./es_tests
+
+valgrind:
+	valgrind --leak-check=yes ./es_tests

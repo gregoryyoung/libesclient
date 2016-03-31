@@ -1,7 +1,7 @@
 TARGET = es_tests
 LIBS = -lm -lcunit -luuid -lprotobuf-c
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -std=c99
 
 .PHONY: all clean test default
 

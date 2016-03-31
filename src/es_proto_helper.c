@@ -8,6 +8,15 @@ struct Buffer {
 	unsigned char *location;
 };
 
+struct NewEvent {
+	uuid_t event_id;
+	char *event_type;
+	int32_t data_content_type;
+	int32_t metadata_content_type;
+	struct Buffer data;
+	struct Buffer metadata;
+};
+
 struct DeleteStream {
 	char *event_stream_id;
 	int32_t expected_version;

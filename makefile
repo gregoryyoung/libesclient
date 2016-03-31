@@ -1,5 +1,5 @@
 TARGET = es_tests
-LIBS = -lm -lcunit -luuid
+LIBS = -lm -lcunit -luuid -lprotobuf-c
 CC = gcc
 CFLAGS = -g -Wall
 

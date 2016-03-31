@@ -12,6 +12,7 @@ int main()
    int err;
    if((err = register_wtf_uuid_tests())) return err;
    if((err = register_es_msg_tests())) return err;
+   if((err = register_es_proto_helper_tests())) return err;
    //if(err) return err;
 
    CU_basic_set_mode(CU_BRM_VERBOSE);

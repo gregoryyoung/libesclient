@@ -1,3 +1,4 @@
+#include <string.h>
 #include "es_proto.h"
 #include "es_client_internal.h"
 
@@ -38,13 +39,14 @@ struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
 	msg = event_store__client__messages__delete_stream__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct DeleteStream *ret = malloc(sizeof(struct DeleteStream));
-	ret->event_stream_id = msg->event_stream_id;
+	ret->event_stream_id = strdup(msg->event_stream_id);
 	ret->expected_version = msg->expected_version;
 	ret->require_master = msg->require_master;
 	ret->hard_delete = true;
 	if(msg->has_hard_delete) {
 		ret->hard_delete = msg->hard_delete;
 	}
+	event_store__client__messages__delete_stream__free_unpacked (msg, NULL);
 	return ret;
 }
 
@@ -62,7 +64,7 @@ void test_delete_stream (void) {
 
 int register_es_proto_helper_tests() {
    CU_pSuite pSuite = NULL;
-    pSuite = CU_add_suite("wtf uuid tests", NULL, NULL);
+    pSuite = CU_add_suite("proto serialiation tests", NULL, NULL);
     if (NULL == pSuite) {
        CU_cleanup_registry();
        return CU_get_error();

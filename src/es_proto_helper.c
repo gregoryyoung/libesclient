@@ -59,6 +59,11 @@ struct ReadEvent {
 	bool require_master;
 };
 
+struct DeletePersistentSubscription {
+	char *subscription_group_name;
+	char *event_stream_id;
+};
+
 void destroy_delete_stream(struct DeleteStream **item) {
 	assert(item);
 	struct DeleteStream *self = *item;
@@ -300,6 +305,41 @@ struct ReadAllEvents *es_unpack_read_all_events(struct Buffer buffer) {
 	return ret;
 }
 
+void destroy_delete_persistent_subscription(struct DeletePersistentSubscription **item) {
+	assert(item);
+	struct DeletePersistentSubscription *self = *item;
+	if (self->event_stream_id) free (self->event_stream_id);
+	if (self->subscription_group_name) free (self->subscription_group_name);
+	free (self);
+	*item = NULL;
+}
+
+
+int es_pack_delete_persistent_subscription(struct DeletePersistentSubscription *read, struct Buffer buffer) {
+	EventStore__Client__Messages__DeletePersistentSubscription msg = EVENT_STORE__CLIENT__MESSAGES__DELETE_PERSISTENT_SUBSCRIPTION__INIT;
+	unsigned len;
+
+	assert (read);
+	msg.event_stream_id = read->event_stream_id;
+	msg.subscription_group_name = read->subscription_group_name;
+	len = event_store__client__messages__delete_persistent_subscription__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__delete_persistent_subscription__pack (&msg,buffer.location);
+	return len;
+}
+
+struct DeletePersistentSubscription *es_unpack_delete_persistent_subscription(struct Buffer buffer) {
+	EventStore__Client__Messages__DeletePersistentSubscription *msg;
+	msg = event_store__client__messages__delete_persistent_subscription__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct DeletePersistentSubscription *ret = malloc (sizeof (struct ReadAllEvents));
+	ret->event_stream_id = strdup (msg->event_stream_id);
+	ret->subscription_group_name = strdup (msg->subscription_group_name);
+	event_store__client__messages__delete_persistent_subscription__free_unpacked (msg, NULL);
+	return ret;
+}
+
 
 
 struct Buffer get_test_buffer(int size) {
@@ -404,6 +444,21 @@ void test_read_event (void) {
 	free (buffer.location);
 }
 
+void test_delete_persistent_subscription (void) {
+	struct DeletePersistentSubscription d;
+	d.event_stream_id = "testing";
+	d.subscription_group_name = "group";
+	struct Buffer buffer = get_test_buffer(1024);
+	int32_t len = es_pack_delete_persistent_subscription (&d, buffer);
+	buffer.length = len;
+	struct DeletePersistentSubscription *msg = es_unpack_delete_persistent_subscription (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_STRING_EQUAL ("testing", msg->event_stream_id);
+	CU_ASSERT_STRING_EQUAL ("group", msg->subscription_group_name);
+	destroy_delete_persistent_subscription (&msg);
+	free (buffer.location);
+}
+
 
 int register_es_proto_helper_tests() {
    CU_pSuite pSuite = NULL;
@@ -418,6 +473,7 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto ReadStreamEvents", test_read_stream_events))||
         (NULL == CU_add_test(pSuite, "test proto ReadAllEvents", test_read_all_events))||        
         (NULL == CU_add_test(pSuite, "test proto ReadEvent", test_read_event))||
+        (NULL == CU_add_test(pSuite, "test proto DeletePersistentSubscription", test_delete_persistent_subscription))||
         0)
     {
        CU_cleanup_registry();

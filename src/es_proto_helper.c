@@ -44,6 +44,14 @@ struct ReadStreamEvents {
 	bool require_master;
 };
 
+struct ReadAllEvents {
+	uint64_t commit_position;
+	uint64_t prepare_position;
+	uint32_t max_count;
+	bool resolve_link_tos;
+	bool require_master;
+};
+
 struct ReadEvent {
 	char *event_stream_id;
 	uint32_t event_number;
@@ -253,6 +261,46 @@ struct ReadEvent *es_unpack_read_event(struct Buffer buffer) {
 }
 
 
+void destroy_read_all_events(struct ReadAllEvents **item) {
+	assert(item);
+	struct ReadAllEvents *self = *item;
+	free (self);
+	*item = NULL;
+}
+
+
+int es_pack_read_all_events(struct ReadAllEvents *read, struct Buffer buffer) {
+	EventStore__Client__Messages__ReadAllEvents msg = EVENT_STORE__CLIENT__MESSAGES__READ_ALL_EVENTS__INIT;
+	unsigned len;
+
+	assert (read);
+	msg.prepare_position = read->prepare_position;
+	msg.commit_position = read->commit_position;
+	msg.max_count = read->max_count;
+	msg.resolve_link_tos = read->resolve_link_tos;
+	msg.require_master = read->require_master;
+	len = event_store__client__messages__read_all_events__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__read_all_events__pack (&msg,buffer.location);
+	return len;
+}
+
+struct ReadAllEvents *es_unpack_read_all_events(struct Buffer buffer) {
+	EventStore__Client__Messages__ReadAllEvents *msg;
+	msg = event_store__client__messages__read_all_events__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct ReadAllEvents *ret = malloc (sizeof (struct ReadAllEvents));
+	ret->commit_position = msg->commit_position;
+	ret->prepare_position = msg->prepare_position;
+	ret->require_master = msg->require_master;
+	ret->resolve_link_tos = msg->resolve_link_tos;
+	ret->max_count = msg->max_count;
+	event_store__client__messages__read_all_events__free_unpacked (msg, NULL);
+	return ret;
+}
+
+
 
 struct Buffer get_test_buffer(int size) {
 	struct Buffer buffer;
@@ -316,6 +364,28 @@ void test_read_stream_events (void) {
 	free (buffer.location);
 }
 
+void test_read_all_events (void) {
+	struct ReadAllEvents r;
+	r.prepare_position = 1001;
+	r.commit_position = 1002;
+	r.max_count = 10;
+	r.require_master = true;
+	r.resolve_link_tos = true;
+	struct Buffer buffer = get_test_buffer (1024);
+	int32_t len = es_pack_read_all_events (&r, buffer);
+	buffer.length = len;
+	struct ReadAllEvents *msg = es_unpack_read_all_events (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_EQUAL (1001, msg->prepare_position);
+	CU_ASSERT_EQUAL (1002, msg->commit_position);
+	CU_ASSERT_EQUAL (10, msg->max_count);
+	CU_ASSERT (msg->resolve_link_tos);
+	CU_ASSERT (msg->require_master);
+	destroy_read_all_events (&msg);
+	free (buffer.location);
+}
+
+
 void test_read_event (void) {
 	struct ReadEvent r;
 	r.event_stream_id = "testing";
@@ -346,6 +416,7 @@ int register_es_proto_helper_tests() {
     if ((NULL == CU_add_test(pSuite, "test proto DeleteStream", test_delete_stream)) ||
         (NULL == CU_add_test(pSuite, "test proto SubscribeToStream", test_subscribe_to_stream))||
         (NULL == CU_add_test(pSuite, "test proto ReadStreamEvents", test_read_stream_events))||
+        (NULL == CU_add_test(pSuite, "test proto ReadAllEvents", test_read_all_events))||        
         (NULL == CU_add_test(pSuite, "test proto ReadEvent", test_read_event))||
         0)
     {

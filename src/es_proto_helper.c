@@ -64,6 +64,11 @@ struct DeletePersistentSubscription {
 	char *event_stream_id;
 };
 
+struct TransactionCommit {
+	uint64_t transaction_id;
+	bool require_master;
+};
+
 void destroy_delete_stream(struct DeleteStream **item) {
 	assert(item);
 	struct DeleteStream *self = *item;
@@ -333,13 +338,45 @@ struct DeletePersistentSubscription *es_unpack_delete_persistent_subscription(st
 	EventStore__Client__Messages__DeletePersistentSubscription *msg;
 	msg = event_store__client__messages__delete_persistent_subscription__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
-	struct DeletePersistentSubscription *ret = malloc (sizeof (struct ReadAllEvents));
+	struct DeletePersistentSubscription *ret = malloc (sizeof (struct DeletePersistentSubscription));
 	ret->event_stream_id = strdup (msg->event_stream_id);
 	ret->subscription_group_name = strdup (msg->subscription_group_name);
 	event_store__client__messages__delete_persistent_subscription__free_unpacked (msg, NULL);
 	return ret;
 }
 
+void destroy_transaction_commit(struct TransactionCommit **item) {
+	assert(item);
+	struct TransactionCommit *self = *item;
+	free (self);
+	*item = NULL;
+}
+
+
+int es_pack_transaction_commit(struct TransactionCommit *tran, struct Buffer buffer) {
+	EventStore__Client__Messages__TransactionCommit msg = EVENT_STORE__CLIENT__MESSAGES__TRANSACTION_COMMIT__INIT;
+	unsigned len;
+
+	assert (tran);
+	msg.transaction_id = tran->transaction_id;
+	msg.require_master = tran->require_master;
+	len = event_store__client__messages__transaction_commit__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__transaction_commit__pack (&msg,buffer.location);
+	return len;
+}
+
+struct TransactionCommit *es_unpack_transaction_commit(struct Buffer buffer) {
+	EventStore__Client__Messages__TransactionCommit *msg;
+	msg = event_store__client__messages__transaction_commit__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct TransactionCommit *ret = malloc (sizeof (struct TransactionCommit));
+	ret->transaction_id = msg->transaction_id;
+	ret->require_master = msg->require_master;
+	event_store__client__messages__transaction_commit__free_unpacked (msg, NULL);
+	return ret;
+}
 
 
 struct Buffer get_test_buffer(int size) {
@@ -459,6 +496,20 @@ void test_delete_persistent_subscription (void) {
 	free (buffer.location);
 }
 
+void test_transaction_commit (void) {
+	struct TransactionCommit d;
+	d.transaction_id = 123456;
+	d.require_master = true;
+	struct Buffer buffer = get_test_buffer(1024);
+	int32_t len = es_pack_transaction_commit (&d, buffer);
+	buffer.length = len;
+	struct TransactionCommit *msg = es_unpack_transaction_commit (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_EQUAL (123456, msg->transaction_id);
+	CU_ASSERT (msg->require_master);
+	destroy_transaction_commit (&msg);
+	free (buffer.location);
+}
 
 int register_es_proto_helper_tests() {
    CU_pSuite pSuite = NULL;
@@ -474,6 +525,7 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto ReadAllEvents", test_read_all_events))||        
         (NULL == CU_add_test(pSuite, "test proto ReadEvent", test_read_event))||
         (NULL == CU_add_test(pSuite, "test proto DeletePersistentSubscription", test_delete_persistent_subscription))||
+        (NULL == CU_add_test(pSuite, "test proto TransactionCommit", test_transaction_commit))||
         0)
     {
        CU_cleanup_registry();

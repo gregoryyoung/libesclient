@@ -33,7 +33,7 @@ struct WriteEvents {
 	int32_t expected_version;
 	int32_t num_events;
 	bool require_master;
-	struct NewEvent *events;
+	struct NewEvent **events;
 };
 
 struct ReadStreamEvents {
@@ -162,13 +162,17 @@ int es_pack_write_events(struct WriteEvents *write, struct Buffer buffer) {
 	msg.event_stream_id = write->event_stream_id;
 	msg.expected_version = write->expected_version;
 	msg.require_master = write->require_master;
+	fflush (stdout);
+
 	msg.events = malloc (sizeof (struct EventStore__Client__Messages__NewEvent *) * write->num_events);
+	msg.n_events = write->num_events;
 	for(int i=0; i<write->num_events; i++) {
-		struct NewEvent *cur = &write->events[i];
+		struct NewEvent *cur = write->events[i];
 		assert (cur->data.location);
 		assert (cur->data.length > 0);
 		EventStore__Client__Messages__NewEvent ev = EVENT_STORE__CLIENT__MESSAGES__NEW_EVENT__INIT;
 		ev.data_content_type = cur->data_content_type;
+		ev.event_type = cur->event_type;
 		ev.metadata_content_type = cur->metadata_content_type;
 		ev.data.data = cur->data.location;
 		ev.data.len = cur->data.length;
@@ -180,12 +184,40 @@ int es_pack_write_events(struct WriteEvents *write, struct Buffer buffer) {
 	}
 	len = event_store__client__messages__write_events__get_packed_size (&msg);
 	if (len > buffer.length) {
-		free (msg.events);
 		return 0;
 	}
 	event_store__client__messages__write_events__pack (&msg, buffer.location);
-	free (msg.events);
-	return 0;
+	return len;
+}
+
+struct WriteEvents *es_unpack_write_events(struct Buffer buffer) {
+	EventStore__Client__Messages__WriteEvents *msg;
+	msg = event_store__client__messages__write_events__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct WriteEvents *ret = malloc (sizeof (struct WriteEvents));
+	ret->event_stream_id = strdup (msg->event_stream_id);
+	ret->expected_version = msg->expected_version;
+	ret->require_master = msg->require_master;
+	ret->events = malloc (sizeof (struct NewEvent*) * msg->n_events);
+	ret->num_events = msg->n_events;
+	fflush (stdout);
+	for(int i=0;i<msg->n_events;i++) {
+		fflush (stdout);
+		EventStore__Client__Messages__NewEvent *ev = msg->events[i];
+		struct NewEvent *cur = malloc (sizeof(struct NewEvent));
+		cur->event_type = strdup (ev->event_type);
+		cur->data_content_type = ev->data_content_type;
+		cur->metadata_content_type = ev->metadata_content_type;
+		cur->data.location = ev->data.data;
+		cur->data.length = ev->data.len;
+		if(ev->has_metadata) {
+			cur->metadata.location = ev->metadata.data;
+			cur->metadata.length = ev->metadata.len;
+		}
+		ret->events[i] = cur;
+	}
+	event_store__client__messages__write_events__free_unpacked (msg, NULL);
+	return ret;
 }
 
 
@@ -420,6 +452,53 @@ void test_subscribe_to_stream (void) {
 	free (buffer.location);
 }
 
+void test_write_events (void) {
+	struct WriteEvents r;
+	unsigned char data[16] = {0x46, 0x6c,0xbc, 0x3e, 0x72,0xe2, 0x26, 0x42, 0xbc,0xb5,0xaa,0x93,0xc4,0x11,0xed,0x0d };
+	struct Buffer buffer = get_test_buffer(1024);
+	r.event_stream_id = "test";
+	r.expected_version = 19;
+	r.require_master = true;
+	r.num_events = 2;
+	r.events = malloc (sizeof (struct NewEvent*) * 2);
+	struct NewEvent *item = malloc (sizeof (struct NewEvent));
+	uuid_generate(item->event_id);
+	item->event_type = "ev1";
+	item->data_content_type = 1;
+	item->metadata_content_type = 2;
+	item->data.location = &data;
+	item->data.length = 5;
+	r.events[0] = item;
+	struct NewEvent *item2 = malloc (sizeof (struct NewEvent));
+	item2->event_type = "ev2";
+	item2->data_content_type = 2;
+	item2->metadata_content_type = 3;
+	item2->data.location = &data;
+	item2->data.length = 17;
+	r.events[1] = item2;
+	int len = es_pack_write_events (&r, buffer);
+	buffer.length = len;
+	struct WriteEvents *msg = es_unpack_write_events(buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_STRING_EQUAL ("test", msg->event_stream_id);
+	CU_ASSERT_EQUAL (19, msg->expected_version);
+	CU_ASSERT (msg->require_master);
+	CU_ASSERT_EQUAL (2, msg->num_events);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg->events);
+	/*
+	item = msg->events[1];
+	printf ("dct is %d", item->data_content_type);
+	printf ("mdct is %d", item->metadata_content_type);
+	printf ("content type  is %s", item->event_type);
+	item = msg->events[0];
+	printf ("dct is %d", item->data_content_type);
+	printf ("mdct is %d", item->metadata_content_type);
+	printf ("content type  is %s", item->event_type);
+	CU_ASSERT_EQUAL (2, item->data_content_type);
+	CU_ASSERT_EQUAL (2, item->metadata_content_type);
+	*/
+}
+
 void test_read_stream_events (void) {
 	struct ReadStreamEvents r;
 	r.event_stream_id = "testing";
@@ -522,10 +601,11 @@ int register_es_proto_helper_tests() {
     if ((NULL == CU_add_test(pSuite, "test proto DeleteStream", test_delete_stream)) ||
         (NULL == CU_add_test(pSuite, "test proto SubscribeToStream", test_subscribe_to_stream))||
         (NULL == CU_add_test(pSuite, "test proto ReadStreamEvents", test_read_stream_events))||
-        (NULL == CU_add_test(pSuite, "test proto ReadAllEvents", test_read_all_events))||        
+        (NULL == CU_add_test(pSuite, "test proto ReadAllEvents", test_read_all_events))||
         (NULL == CU_add_test(pSuite, "test proto ReadEvent", test_read_event))||
         (NULL == CU_add_test(pSuite, "test proto DeletePersistentSubscription", test_delete_persistent_subscription))||
         (NULL == CU_add_test(pSuite, "test proto TransactionCommit", test_transaction_commit))||
+        (NULL == CU_add_test(pSuite, "test proto WriteEvents", test_write_events))||
         0)
     {
        CU_cleanup_registry();

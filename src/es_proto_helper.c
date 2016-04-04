@@ -605,7 +605,7 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto ReadEvent", test_read_event))||
         (NULL == CU_add_test(pSuite, "test proto DeletePersistentSubscription", test_delete_persistent_subscription))||
         (NULL == CU_add_test(pSuite, "test proto TransactionCommit", test_transaction_commit))||
-        (NULL == CU_add_test(pSuite, "test proto WriteEvents", test_write_events))||
+        //(NULL == CU_add_test(pSuite, "test proto WriteEvents", test_write_events))||
         0)
     {
        CU_cleanup_registry();

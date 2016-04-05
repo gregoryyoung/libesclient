@@ -2,6 +2,18 @@
 #include "es_client_internal.h"
 
 
+typedef enum {
+  Success = 0,
+  PrepareTimeout = 1,
+  CommitTimeout = 2,
+  ForwardTimeout = 3,
+  WrongExpectedVersion = 4,
+  StreamDeleted = 5,
+  InvalidTransaction = 6,
+  AccessDenied = 7
+} OperationResult;
+
+
 struct Buffer {
 	int length;
 	unsigned char *location;
@@ -21,6 +33,13 @@ struct DeleteStream {
 	int32_t expected_version;
 	bool require_master;
 	bool hard_delete;
+};
+
+struct DeleteStreamCompleted {
+	OperationResult result;
+	char *message ;
+	int64_t prepare_position;
+	int64_t commit_position;
 };
 
 struct SubscribeToStream {
@@ -107,6 +126,46 @@ struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
 		ret->hard_delete = msg->hard_delete;
 	}
 	event_store__client__messages__delete_stream__free_unpacked (msg, NULL);
+	return ret;
+}
+
+void destroy_delete_stream_completed(struct DeleteStreamCompleted **item) {
+	assert(item);
+	struct DeleteStreamCompleted *self = *item;
+	if (self->message) free (self->message);
+	free (self);
+	*item = NULL;
+}
+
+int es_pack_delete_stream_completed(struct DeleteStreamCompleted *delete, struct Buffer buffer) {
+	EventStore__Client__Messages__DeleteStreamCompleted msg = EVENT_STORE__CLIENT__MESSAGES__DELETE_STREAM_COMPLETED__INIT;
+	unsigned len;
+
+	assert (delete);
+	msg.result= delete->result;
+	if (delete->message)
+		msg.message = strdup(delete->message);
+	msg.has_prepare_position = true;
+	msg.has_commit_position = true;
+	msg.prepare_position = delete->prepare_position;
+	msg.commit_position = delete->commit_position;
+	len = event_store__client__messages__delete_stream_completed__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__delete_stream_completed__pack (&msg,buffer.location);
+	return len;
+}
+
+struct DeleteStreamCompleted *es_unpack_delete_stream_completed(struct Buffer buffer) {
+	EventStore__Client__Messages__DeleteStreamCompleted *msg;
+	msg = event_store__client__messages__delete_stream_completed__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct DeleteStreamCompleted *ret = malloc (sizeof (struct DeleteStreamCompleted));
+	ret->message = strdup (msg->message);
+	ret->prepare_position = msg->prepare_position;
+	ret->commit_position = msg->commit_position;
+	ret->result = msg->result;
+	event_store__client__messages__delete_stream_completed__free_unpacked (msg, NULL);
 	return ret;
 }
 
@@ -228,6 +287,9 @@ struct WriteEvents *es_unpack_write_events(struct Buffer buffer) {
 		if(ev->has_metadata) {
 			cur->metadata.location = ev->metadata.data;
 			cur->metadata.length = ev->metadata.len;
+		} else {
+			cur->metadata.length = 0;
+			cur->metadata.location = NULL;
 		}
 		ret->events[i] = cur;
 	}
@@ -452,6 +514,26 @@ void test_delete_stream (void) {
 	free (buffer.location);
 }
 
+void test_delete_stream_completed (void) {
+	struct DeleteStreamCompleted d;
+	d.message = "testing";
+	d.result = 1;
+	d.prepare_position = 17;
+	d.commit_position = 19;
+	struct Buffer buffer = get_test_buffer(1024);
+	int32_t len = es_pack_delete_stream_completed (&d, buffer);
+	buffer.length = len;
+	struct DeleteStreamCompleted *msg = es_unpack_delete_stream_completed (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_STRING_EQUAL ("testing", msg->message);
+	CU_ASSERT_EQUAL (msg->prepare_position, 17);
+	CU_ASSERT_EQUAL (msg->commit_position, 19);
+	CU_ASSERT_EQUAL (msg->result, 1);
+	destroy_delete_stream_completed (&msg);
+	free (buffer.location);
+}
+
+
 void test_subscribe_to_stream (void) {
 	struct SubscribeToStream d;
 	d.event_stream_id = "testing";
@@ -631,6 +713,7 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto DeletePersistentSubscription", test_delete_persistent_subscription))||
         (NULL == CU_add_test(pSuite, "test proto TransactionCommit", test_transaction_commit))||
         (NULL == CU_add_test(pSuite, "test proto WriteEvents", test_write_events))||
+        (NULL == CU_add_test(pSuite, "test proto DeleteStreamCompleted", test_delete_stream_completed))||
         0)
     {
        CU_cleanup_registry();

@@ -55,6 +55,15 @@ struct WriteEvents {
 	struct NewEvent **events;
 };
 
+struct WriteEventsCompleted {
+	OperationResult result;
+	char *message;
+	uint32_t first_event_number;
+	uint32_t last_event_number;
+	int64_t prepare_position;
+	int64_t commit_position;
+};
+
 struct ReadStreamEvents {
 	char *event_stream_id;
 	uint32_t from_event_number;
@@ -294,6 +303,50 @@ struct WriteEvents *es_unpack_write_events(struct Buffer buffer) {
 		ret->events[i] = cur;
 	}
 	event_store__client__messages__write_events__free_unpacked (msg, NULL);
+	return ret;
+}
+
+
+void destroy_write_events_completed(struct WriteEventsCompleted **item) {
+	assert(item);
+	struct WriteEventsCompleted *self = *item;
+	if (self->message) free(self->message);
+	free (self);
+	*item = NULL;
+}
+
+int es_pack_write_events_completed(struct WriteEventsCompleted *write, struct Buffer buffer) {
+	EventStore__Client__Messages__WriteEventsCompleted msg = EVENT_STORE__CLIENT__MESSAGES__WRITE_EVENTS_COMPLETED__INIT;
+	unsigned len;
+
+	assert (write);
+	msg.result = write->result;
+	msg.message = write->message;
+	msg.first_event_number = write->first_event_number;
+	msg.last_event_number = write->last_event_number;
+	msg.has_prepare_position = true;
+	msg.prepare_position = write->prepare_position;
+	msg.has_commit_position = true;
+	msg.commit_position = write->commit_position;
+	len = event_store__client__messages__write_events_completed__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__write_events_completed__pack (&msg,buffer.location);
+	return len;
+}
+
+struct WriteEventsCompleted *es_unpack_write_events_completed(struct Buffer buffer) {
+	EventStore__Client__Messages__WriteEventsCompleted *msg;
+	msg = event_store__client__messages__write_events_completed__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct WriteEventsCompleted *ret = malloc (sizeof (struct WriteEventsCompleted));
+	ret->message = strdup (msg->message);
+	ret->first_event_number = msg->first_event_number;
+	ret->last_event_number = msg->last_event_number;
+	ret->prepare_position = msg->prepare_position;
+	ret->commit_position = msg->commit_position;
+	ret->result = msg->result;
+	event_store__client__messages__write_events_completed__free_unpacked (msg, NULL);
 	return ret;
 }
 
@@ -549,6 +602,30 @@ void test_subscribe_to_stream (void) {
 	free (buffer.location);
 }
 
+void test_write_events_completed (void) {
+	struct WriteEventsCompleted d;
+	d.message = "testing";
+	d.first_event_number = 1;
+	d.last_event_number = 3;
+	d.prepare_position = 17;
+	d.commit_position = 19;
+	d.result = 1;
+	struct Buffer buffer = get_test_buffer(1024);
+	int32_t len = es_pack_write_events_completed (&d, buffer);
+	buffer.length = len;
+	struct WriteEventsCompleted *msg = es_unpack_write_events_completed (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_STRING_EQUAL ("testing", msg->message);
+	CU_ASSERT_EQUAL (msg->first_event_number, 1);
+	CU_ASSERT_EQUAL (msg->last_event_number, 3);
+	CU_ASSERT_EQUAL (msg->prepare_position, 17);
+	CU_ASSERT_EQUAL (msg->commit_position, 19);
+	CU_ASSERT_EQUAL (msg->result, 1);
+	destroy_write_events_completed (&msg);
+	free (buffer.location);
+}
+
+
 void test_write_events (void) {
 	struct WriteEvents r;
 	unsigned char data[16] = {0x46, 0x6c,0xbc, 0x3e, 0x72,0xe2, 0x26, 0x42, 0xbc,0xb5,0xaa,0x93,0xc4,0x11,0xed,0x0d };
@@ -714,6 +791,7 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto TransactionCommit", test_transaction_commit))||
         (NULL == CU_add_test(pSuite, "test proto WriteEvents", test_write_events))||
         (NULL == CU_add_test(pSuite, "test proto DeleteStreamCompleted", test_delete_stream_completed))||
+        (NULL == CU_add_test(pSuite, "test proto WriteEventsCompleted", test_write_events_completed))||
         0)
     {
        CU_cleanup_registry();

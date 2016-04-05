@@ -148,6 +148,14 @@ void destroy_write_events(struct WriteEvents **item) {
 	assert(item);
 	struct WriteEvents *self = *item;
 	if (self->event_stream_id) free(self->event_stream_id);
+	if (self->num_events > 0) {
+		for (int i=0;i<self->num_events;i++) {
+			if(self->events[i]->event_type)
+				free (self->events[i]->event_type);
+			free (self->events[i]);
+		}
+	}
+	if (self->events) free(self->events);
 	free (self);
 	*item = NULL;
 }
@@ -176,17 +184,24 @@ int es_pack_write_events(struct WriteEvents *write, struct Buffer buffer) {
 		ev.metadata_content_type = cur->metadata_content_type;
 		ev.data.data = cur->data.location;
 		ev.data.len = cur->data.length;
+		ev.metadata.len = cur->metadata.length;
 		if(cur->metadata.length > 0) {
+			ev.has_metadata = true;
 			ev.metadata.data = cur->metadata.location;
-			ev.metadata.len = cur->metadata.length;
 		}
-		msg.events[i] = &ev;
+		EventStore__Client__Messages__NewEvent *t = malloc (sizeof (EventStore__Client__Messages__NewEvent));
+		memcpy (t, &ev, sizeof (EventStore__Client__Messages__NewEvent));
+		msg.events[i] = t;
 	}
 	len = event_store__client__messages__write_events__get_packed_size (&msg);
 	if (len > buffer.length) {
 		return 0;
 	}
 	event_store__client__messages__write_events__pack (&msg, buffer.location);
+	for(int i=0;i<msg.n_events; i++) {
+		free (msg.events[i]);
+	}
+	free (msg.events);
 	return len;
 }
 
@@ -291,7 +306,7 @@ int es_pack_read_event(struct ReadEvent *read, struct Buffer buffer) {
 
 struct ReadEvent *es_unpack_read_event(struct Buffer buffer) {
 	EventStore__Client__Messages__ReadEvent *msg;
-	msg = event_store__client__messages__read_event__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__read_event__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct ReadEvent *ret = malloc (sizeof (struct ReadEvent));
 	ret->event_stream_id = strdup (msg->event_stream_id);
@@ -461,22 +476,28 @@ void test_write_events (void) {
 	r.require_master = true;
 	r.num_events = 2;
 	r.events = malloc (sizeof (struct NewEvent*) * 2);
-	struct NewEvent *item = malloc (sizeof (struct NewEvent));
-	uuid_generate(item->event_id);
-	item->event_type = "ev1";
-	item->data_content_type = 1;
-	item->metadata_content_type = 2;
-	item->data.location = &data;
-	item->data.length = 5;
-	r.events[0] = item;
-	struct NewEvent *item2 = malloc (sizeof (struct NewEvent));
-	item2->event_type = "ev2";
-	item2->data_content_type = 2;
-	item2->metadata_content_type = 3;
-	item2->data.location = &data;
-	item2->data.length = 17;
-	r.events[1] = item2;
+	struct NewEvent item;
+	uuid_generate(item.event_id);
+	item.event_type = "ev1";
+	item.data_content_type = 1;
+	item.metadata_content_type = 2;
+	item.data.location = (unsigned char *) &data;
+	item.data.length = 5;
+	item.metadata.location = NULL;
+	item.metadata.length = 0;
+	r.events[0] = &item;
+	struct NewEvent item2;
+	uuid_generate(item2.event_id);
+	item2.event_type = "ev2";
+	item2.data_content_type = 2;
+	item2.metadata_content_type = 3;
+	item2.data.location = (unsigned char *) &data;
+	item2.data.length = 17;
+	item2.metadata.location = (unsigned char *) &data;
+	item2.metadata.length = 5;
+	r.events[1] = &item2;
 	int len = es_pack_write_events (&r, buffer);
+	free (r.events);
 	buffer.length = len;
 	struct WriteEvents *msg = es_unpack_write_events(buffer);
 	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
@@ -485,18 +506,22 @@ void test_write_events (void) {
 	CU_ASSERT (msg->require_master);
 	CU_ASSERT_EQUAL (2, msg->num_events);
 	CU_ASSERT_PTR_NOT_NULL_FATAL (msg->events);
-	/*
-	item = msg->events[1];
-	printf ("dct is %d", item->data_content_type);
-	printf ("mdct is %d", item->metadata_content_type);
-	printf ("content type  is %s", item->event_type);
-	item = msg->events[0];
-	printf ("dct is %d", item->data_content_type);
-	printf ("mdct is %d", item->metadata_content_type);
-	printf ("content type  is %s", item->event_type);
-	CU_ASSERT_EQUAL (2, item->data_content_type);
-	CU_ASSERT_EQUAL (2, item->metadata_content_type);
-	*/
+
+	struct NewEvent *foo = msg->events[0];
+	CU_ASSERT_STRING_EQUAL ("ev1", foo->event_type);
+	CU_ASSERT_EQUAL (1, foo->data_content_type);
+	CU_ASSERT_EQUAL (2, foo->metadata_content_type);
+	CU_ASSERT_EQUAL (5, foo->data.length);
+	CU_ASSERT_EQUAL (0, foo->metadata.length);
+	foo = msg->events[1];
+	CU_ASSERT_STRING_EQUAL ("ev2", foo->event_type);
+	CU_ASSERT_EQUAL (2, foo->data_content_type);
+	CU_ASSERT_EQUAL (3, foo->metadata_content_type);
+	CU_ASSERT_EQUAL (17, foo->data.length);
+	printf ("length is %d\n", foo->metadata.length);
+	CU_ASSERT_EQUAL (5, foo->metadata.length);
+	destroy_write_events (&msg);
+	free (buffer.location);
 }
 
 void test_read_stream_events (void) {
@@ -605,7 +630,7 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto ReadEvent", test_read_event))||
         (NULL == CU_add_test(pSuite, "test proto DeletePersistentSubscription", test_delete_persistent_subscription))||
         (NULL == CU_add_test(pSuite, "test proto TransactionCommit", test_transaction_commit))||
-        //(NULL == CU_add_test(pSuite, "test proto WriteEvents", test_write_events))||
+        (NULL == CU_add_test(pSuite, "test proto WriteEvents", test_write_events))||
         0)
     {
        CU_cleanup_registry();

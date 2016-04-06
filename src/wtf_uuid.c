@@ -16,6 +16,8 @@ void write_uuid_to_wtf (uuid_t uuid, unsigned char *wtf_data) {
     }
 }
 
+#ifdef TESTS
+
 void test_read_wtf_uuid() {
     char uuid_str[37];
     char data[16] = {0x46, 0x6c,0xbc, 0x3e, 0x72,0xe2, 0x26, 0x42, 0xbc,0xb5,0xaa,0x93,0xc4,0x11,0xed,0x0d };
@@ -64,3 +66,5 @@ int register_wtf_uuid_tests() {
     }
     return 0;
 }
+
+#endif

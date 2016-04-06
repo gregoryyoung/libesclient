@@ -1,3 +1,6 @@
+#ifndef ES_CLIENT_INTERNAL
+#define ES_CLIENT_INTERNAL
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,3 +11,7 @@
 #include "wtf_uuid.h"
 #include "es_proto_helper.h"
 
+
+#define TESTS
+
+#endif

@@ -144,6 +144,8 @@ void compress_space(struct ParserState *state) {
 
 }
 
+
+#ifdef TESTS
 char data[24] = {0x0A,0,0,0,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
 
 static void test_parser_create() {
@@ -280,3 +282,5 @@ int register_es_msg_tests() {
     }
     return 0;
 }
+
+#endif

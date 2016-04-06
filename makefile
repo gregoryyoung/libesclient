@@ -1,7 +1,7 @@
 TARGET = es_tests
 LIBS = -lm -lcunit -luuid -lprotobuf-c
 CC = gcc
-CFLAGS = -g -Wall -std=c99
+CFLAGS = -g -std=c99 -Wall
 
 .PHONY: all clean test default valgrind
 
@@ -17,7 +17,7 @@ HEADERS = $(wildcard src/*.h)
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(OBJECTS) $(LIBS) -o $@
 
 clean:
 	-rm -f *.o

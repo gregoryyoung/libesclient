@@ -540,7 +540,7 @@ struct TransactionCommit *es_unpack_transaction_commit(struct Buffer buffer) {
 	return ret;
 }
 
-
+#ifdef TESTS
 struct Buffer get_test_buffer(int size) {
 	struct Buffer buffer;
 	buffer.location = malloc(size);
@@ -798,3 +798,4 @@ int register_es_proto_helper_tests() {
     }
     return 0;
 }
+#endif

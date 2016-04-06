@@ -677,7 +677,6 @@ void test_write_events (void) {
 	CU_ASSERT_EQUAL (2, foo->data_content_type);
 	CU_ASSERT_EQUAL (3, foo->metadata_content_type);
 	CU_ASSERT_EQUAL (17, foo->data.length);
-	printf ("length is %d\n", foo->metadata.length);
 	CU_ASSERT_EQUAL (5, foo->metadata.length);
 	destroy_write_events (&msg);
 	free (buffer.location);

@@ -47,6 +47,13 @@ struct SubscribeToStream {
 	bool resolve_link_tos;
 };
 
+
+struct SubscriptionConfirmation {
+	int64_t last_commit_position;
+	int32_t last_event_number;
+};
+
+
 struct WriteEvents {
 	char *event_stream_id;
 	int32_t expected_version;
@@ -153,7 +160,7 @@ int es_pack_delete_stream_completed(struct DeleteStreamCompleted *delete, struct
 	assert (delete);
 	msg.result= delete->result;
 	if (delete->message)
-		msg.message = strdup(delete->message);
+		msg.message = delete->message;
 	msg.has_prepare_position = true;
 	msg.has_commit_position = true;
 	msg.prepare_position = delete->prepare_position;
@@ -177,7 +184,6 @@ struct DeleteStreamCompleted *es_unpack_delete_stream_completed(struct Buffer bu
 	event_store__client__messages__delete_stream_completed__free_unpacked (msg, NULL);
 	return ret;
 }
-
 
 void destroy_subscribe_to_stream(struct SubscribeToStream **item) {
 	assert(item);
@@ -211,6 +217,40 @@ struct SubscribeToStream *es_unpack_subscribe_to_stream(struct Buffer buffer) {
 	event_store__client__messages__subscribe_to_stream__free_unpacked (msg, NULL);
 	return ret;
 }
+
+void destroy_subscription_confirmation(struct SubscriptionConfirmation **item) {
+	assert(item);
+	struct SubscriptionConfirmation *self = *item;
+	free (self);
+	*item = NULL;
+}
+
+int es_pack_subscription_confirmation(struct SubscriptionConfirmation *subscribe, struct Buffer buffer) {
+	EventStore__Client__Messages__SubscriptionConfirmation msg = EVENT_STORE__CLIENT__MESSAGES__SUBSCRIPTION_CONFIRMATION__INIT;
+	unsigned len;
+
+	assert (subscribe);
+	msg.last_commit_position = subscribe->last_commit_position;
+	msg.has_last_event_number = true;
+	msg.last_event_number = subscribe->last_event_number;
+	len = event_store__client__messages__subscription_confirmation__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__subscription_confirmation__pack (&msg, buffer.location);
+	return len;
+}
+
+struct SubscriptionConfirmation *es_unpack_subscription_confirmation(struct Buffer buffer) {
+	EventStore__Client__Messages__SubscriptionConfirmation *msg;
+	msg = event_store__client__messages__subscription_confirmation__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct SubscriptionConfirmation *ret = malloc (sizeof (struct SubscriptionConfirmation));
+	ret->last_commit_position = msg->last_commit_position;
+	ret->last_event_number = msg->last_event_number;
+	event_store__client__messages__subscription_confirmation__free_unpacked (msg, NULL);
+	return ret;
+}
+
 
 void destroy_write_events(struct WriteEvents **item) {
 	assert(item);
@@ -602,6 +642,21 @@ void test_subscribe_to_stream (void) {
 	free (buffer.location);
 }
 
+void test_subscription_confirmation (void) {
+	struct SubscriptionConfirmation d;
+	d.last_commit_position = 1919;
+	d.last_event_number = 6;
+	struct Buffer buffer = get_test_buffer(1024);
+	int32_t len = es_pack_subscription_confirmation (&d, buffer);
+	buffer.length = len;
+	struct SubscriptionConfirmation *msg = es_unpack_subscription_confirmation (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_EQUAL (1919, msg->last_commit_position);
+	CU_ASSERT_EQUAL (6, msg->last_event_number);
+	destroy_subscription_confirmation (&msg);
+	free (buffer.location);
+}
+
 void test_write_events_completed (void) {
 	struct WriteEventsCompleted d;
 	d.message = "testing";
@@ -791,6 +846,7 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto WriteEvents", test_write_events))||
         (NULL == CU_add_test(pSuite, "test proto DeleteStreamCompleted", test_delete_stream_completed))||
         (NULL == CU_add_test(pSuite, "test proto WriteEventsCompleted", test_write_events_completed))||
+        (NULL == CU_add_test(pSuite, "test proto SubscriptionConfirmation", test_subscription_confirmation))||
         0)
     {
        CU_cleanup_registry();

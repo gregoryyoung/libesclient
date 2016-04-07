@@ -21,6 +21,11 @@ typedef enum {
 	DropReason_SubscriberMaxCountReached=4
 } SubscriptionDropReason;
 
+typedef enum {
+	ScavengeResult_Success = 0,
+	ScavengeResult_InProgress = 1,
+	ScavengeResult_Failed = 2
+} ScavengeResult;
 
 
 struct Buffer {
@@ -116,7 +121,18 @@ struct TransactionCommit {
 	bool require_master;
 };
 
-void destroy_delete_stream(struct DeleteStream **item) {
+
+struct ScavengeDatabase {
+};
+
+struct ScavengeDatabaseCompleted {
+	ScavengeResult result;
+	char *error;
+	int32_t total_time_ms;
+	int64_t total_space_saved;
+};
+
+void destroy_delete_stream (struct DeleteStream **item) {
 	assert(item);
 	struct DeleteStream *self = *item;
 	if (self->event_stream_id) free(self->event_stream_id);
@@ -124,7 +140,7 @@ void destroy_delete_stream(struct DeleteStream **item) {
 	*item = NULL;
 }
 
-int es_pack_delete_stream(struct DeleteStream *delete, struct Buffer buffer) {
+int es_pack_delete_stream (struct DeleteStream *delete, struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStream msg = EVENT_STORE__CLIENT__MESSAGES__DELETE_STREAM__INIT;
 	unsigned len;
 
@@ -141,7 +157,7 @@ int es_pack_delete_stream(struct DeleteStream *delete, struct Buffer buffer) {
 	return len;
 }
 
-struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
+struct DeleteStream *es_unpack_delete_stream (struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStream *msg;
 	msg = event_store__client__messages__delete_stream__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
@@ -157,7 +173,7 @@ struct DeleteStream *es_unpack_delete_stream(struct Buffer buffer) {
 	return ret;
 }
 
-void destroy_delete_stream_completed(struct DeleteStreamCompleted **item) {
+void destroy_delete_stream_completed (struct DeleteStreamCompleted **item) {
 	assert(item);
 	struct DeleteStreamCompleted *self = *item;
 	if (self->message) free (self->message);
@@ -165,7 +181,7 @@ void destroy_delete_stream_completed(struct DeleteStreamCompleted **item) {
 	*item = NULL;
 }
 
-int es_pack_delete_stream_completed(struct DeleteStreamCompleted *delete, struct Buffer buffer) {
+int es_pack_delete_stream_completed (struct DeleteStreamCompleted *delete, struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStreamCompleted msg = EVENT_STORE__CLIENT__MESSAGES__DELETE_STREAM_COMPLETED__INIT;
 	unsigned len;
 
@@ -184,7 +200,7 @@ int es_pack_delete_stream_completed(struct DeleteStreamCompleted *delete, struct
 	return len;
 }
 
-struct DeleteStreamCompleted *es_unpack_delete_stream_completed(struct Buffer buffer) {
+struct DeleteStreamCompleted *es_unpack_delete_stream_completed (struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStreamCompleted *msg;
 	msg = event_store__client__messages__delete_stream_completed__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
@@ -197,7 +213,7 @@ struct DeleteStreamCompleted *es_unpack_delete_stream_completed(struct Buffer bu
 	return ret;
 }
 
-void destroy_subscribe_to_stream(struct SubscribeToStream **item) {
+void destroy_subscribe_to_stream (struct SubscribeToStream **item) {
 	assert(item);
 	struct SubscribeToStream *self = *item;
 	if (self->event_stream_id) free(self->event_stream_id);
@@ -205,7 +221,7 @@ void destroy_subscribe_to_stream(struct SubscribeToStream **item) {
 	*item = NULL;
 }
 
-int es_pack_subscribe_to_stream(struct SubscribeToStream *subscribe, struct Buffer buffer) {
+int es_pack_subscribe_to_stream (struct SubscribeToStream *subscribe, struct Buffer buffer) {
 	EventStore__Client__Messages__SubscribeToStream msg = EVENT_STORE__CLIENT__MESSAGES__SUBSCRIBE_TO_STREAM__INIT;
 	unsigned len;
 
@@ -219,7 +235,7 @@ int es_pack_subscribe_to_stream(struct SubscribeToStream *subscribe, struct Buff
 	return len;
 }
 
-struct SubscribeToStream *es_unpack_subscribe_to_stream(struct Buffer buffer) {
+struct SubscribeToStream *es_unpack_subscribe_to_stream (struct Buffer buffer) {
 	EventStore__Client__Messages__SubscribeToStream *msg;
 	msg = event_store__client__messages__subscribe_to_stream__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
@@ -230,14 +246,14 @@ struct SubscribeToStream *es_unpack_subscribe_to_stream(struct Buffer buffer) {
 	return ret;
 }
 
-void destroy_subscription_confirmation(struct SubscriptionConfirmation **item) {
+void destroy_subscription_confirmation (struct SubscriptionConfirmation **item) {
 	assert(item);
 	struct SubscriptionConfirmation *self = *item;
 	free (self);
 	*item = NULL;
 }
 
-int es_pack_subscription_confirmation(struct SubscriptionConfirmation *subscribe, struct Buffer buffer) {
+int es_pack_subscription_confirmation (struct SubscriptionConfirmation *subscribe, struct Buffer buffer) {
 	EventStore__Client__Messages__SubscriptionConfirmation msg = EVENT_STORE__CLIENT__MESSAGES__SUBSCRIPTION_CONFIRMATION__INIT;
 	unsigned len;
 
@@ -252,7 +268,7 @@ int es_pack_subscription_confirmation(struct SubscriptionConfirmation *subscribe
 	return len;
 }
 
-struct SubscriptionConfirmation *es_unpack_subscription_confirmation(struct Buffer buffer) {
+struct SubscriptionConfirmation *es_unpack_subscription_confirmation (struct Buffer buffer) {
 	EventStore__Client__Messages__SubscriptionConfirmation *msg;
 	msg = event_store__client__messages__subscription_confirmation__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
@@ -263,14 +279,14 @@ struct SubscriptionConfirmation *es_unpack_subscription_confirmation(struct Buff
 	return ret;
 }
 
-void destroy_subscription_dropped(struct SubscriptionDropped **item) {
+void destroy_subscription_dropped (struct SubscriptionDropped **item) {
 	assert(item);
 	struct SubscriptionDropped *self = *item;
 	free (self);
 	*item = NULL;
 }
 
-int es_pack_subscription_dropped(struct SubscriptionDropped *drop, struct Buffer buffer) {
+int es_pack_subscription_dropped (struct SubscriptionDropped *drop, struct Buffer buffer) {
 	EventStore__Client__Messages__SubscriptionDropped msg = EVENT_STORE__CLIENT__MESSAGES__SUBSCRIPTION_DROPPED__INIT;
 	unsigned len;
 
@@ -284,13 +300,41 @@ int es_pack_subscription_dropped(struct SubscriptionDropped *drop, struct Buffer
 	return len;
 }
 
-struct SubscriptionDropped *es_unpack_subscription_dropped(struct Buffer buffer) {
+struct SubscriptionDropped *es_unpack_subscription_dropped (struct Buffer buffer) {
 	EventStore__Client__Messages__SubscriptionDropped *msg;
 	msg = event_store__client__messages__subscription_dropped__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct SubscriptionDropped *ret = malloc (sizeof (struct SubscriptionDropped));
 	ret->reason = msg->reason;
 	event_store__client__messages__subscription_dropped__free_unpacked (msg, NULL);
+	return ret;
+}
+
+void destroy_scavenge_database (struct ScavengeDatabase **item) {
+	assert(item);
+	struct ScavengeDatabase *self = *item;
+	free (self);
+	*item = NULL;
+}
+
+int es_pack_scavenge_database (struct ScavengeDatabase *drop, struct Buffer buffer) {
+	EventStore__Client__Messages__ScavengeDatabase msg = EVENT_STORE__CLIENT__MESSAGES__SCAVENGE_DATABASE__INIT;
+	unsigned len;
+
+	assert (drop);
+	len = event_store__client__messages__scavenge_database__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__scavenge_database__pack (&msg, buffer.location);
+	return len;
+}
+
+struct ScavengeDatabase *es_unpack_scavenge_database (struct Buffer buffer) {
+	EventStore__Client__Messages__ScavengeDatabase *msg;
+	msg = event_store__client__messages__scavenge_database__unpack (NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct ScavengeDatabase *ret = malloc (sizeof (struct ScavengeDatabase));
+	event_store__client__messages__scavenge_database__free_unpacked (msg, NULL);
 	return ret;
 }
 
@@ -713,6 +757,17 @@ void test_subscription_dropped (void) {
 	free (buffer.location);
 }
 
+void test_scavenge_database (void) {
+	struct ScavengeDatabase d;
+	struct Buffer buffer = get_test_buffer (1024);
+	int32_t len = es_pack_scavenge_database (&d, buffer);
+	buffer.length = len;
+	struct ScavengeDatabase *msg = es_unpack_scavenge_database (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	destroy_scavenge_database (&msg);
+	free (buffer.location);
+}
+
 void test_write_events_completed (void) {
 	struct WriteEventsCompleted d;
 	d.message = "testing";
@@ -903,6 +958,7 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto DeleteStreamCompleted", test_delete_stream_completed))||
         (NULL == CU_add_test(pSuite, "test proto WriteEventsCompleted", test_write_events_completed))||
         (NULL == CU_add_test(pSuite, "test proto SubscriptionConfirmation", test_subscription_confirmation))||
+        (NULL == CU_add_test(pSuite, "test proto ScavengeDatabase", test_scavenge_database))||
         0)
     {
        CU_cleanup_registry();

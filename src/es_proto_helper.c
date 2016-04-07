@@ -42,6 +42,26 @@ struct NewEvent {
 	struct Buffer metadata;
 };
 
+struct EventRecord {
+	char *event_stream_id;
+	int32_t event_number;
+	uuid_t event_id;
+	char *event_type;
+	int32_t data_content_type;
+	int32_t metadata_content_type;
+	struct Buffer data;
+	struct Buffer metadata;
+	int64_t created;
+	int64_t created_epoch;
+};
+
+struct ResolvedEvent {
+	struct EventRecord event;
+	struct EventRecord link;
+	int64_t commit_position;
+	int64_t prepare_position;
+};
+
 struct DeleteStream {
 	char *event_stream_id;
 	int32_t expected_version;
@@ -69,6 +89,10 @@ struct SubscriptionConfirmation {
 
 struct SubscriptionDropped {
 	SubscriptionDropReason reason;
+};
+
+struct StreamEventAppeared {
+	struct ResolvedEvent event;
 };
 
 struct WriteEvents {

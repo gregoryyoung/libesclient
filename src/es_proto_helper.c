@@ -3,15 +3,24 @@
 
 
 typedef enum {
-  Success = 0,
-  PrepareTimeout = 1,
-  CommitTimeout = 2,
-  ForwardTimeout = 3,
-  WrongExpectedVersion = 4,
-  StreamDeleted = 5,
-  InvalidTransaction = 6,
-  AccessDenied = 7
+	  Success = 0,
+	  PrepareTimeout = 1,
+	  CommitTimeout = 2,
+	  ForwardTimeout = 3,
+	  WrongExpectedVersion = 4,
+	  StreamDeleted = 5,
+	  InvalidTransaction = 6,
+	  AccessDenied = 7
 } OperationResult;
+
+typedef enum {
+	DropReason_Unsubscribed = 0,
+	DropReason_AccessDenied = 1,
+	DropReason_NotFound=2,
+	DropReason_PersistentSubscriptionDeleted=3,
+	DropReason_SubscriberMaxCountReached=4
+} SubscriptionDropReason;
+
 
 
 struct Buffer {
@@ -53,6 +62,9 @@ struct SubscriptionConfirmation {
 	int32_t last_event_number;
 };
 
+struct SubscriptionDropped {
+	SubscriptionDropReason reason;
+};
 
 struct WriteEvents {
 	char *event_stream_id;
@@ -248,6 +260,37 @@ struct SubscriptionConfirmation *es_unpack_subscription_confirmation(struct Buff
 	ret->last_commit_position = msg->last_commit_position;
 	ret->last_event_number = msg->last_event_number;
 	event_store__client__messages__subscription_confirmation__free_unpacked (msg, NULL);
+	return ret;
+}
+
+void destroy_subscription_dropped(struct SubscriptionDropped **item) {
+	assert(item);
+	struct SubscriptionDropped *self = *item;
+	free (self);
+	*item = NULL;
+}
+
+int es_pack_subscription_dropped(struct SubscriptionDropped *drop, struct Buffer buffer) {
+	EventStore__Client__Messages__SubscriptionDropped msg = EVENT_STORE__CLIENT__MESSAGES__SUBSCRIPTION_DROPPED__INIT;
+	unsigned len;
+
+	assert (drop);
+	msg.has_reason = true;
+	msg.reason = drop->reason;
+	len = event_store__client__messages__subscription_dropped__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__subscription_dropped__pack (&msg, buffer.location);
+	return len;
+}
+
+struct SubscriptionDropped *es_unpack_subscription_dropped(struct Buffer buffer) {
+	EventStore__Client__Messages__SubscriptionDropped *msg;
+	msg = event_store__client__messages__subscription_dropped__unpack(NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct SubscriptionDropped *ret = malloc (sizeof (struct SubscriptionDropped));
+	ret->reason = msg->reason;
+	event_store__client__messages__subscription_dropped__free_unpacked (msg, NULL);
 	return ret;
 }
 
@@ -654,6 +697,19 @@ void test_subscription_confirmation (void) {
 	CU_ASSERT_EQUAL (1919, msg->last_commit_position);
 	CU_ASSERT_EQUAL (6, msg->last_event_number);
 	destroy_subscription_confirmation (&msg);
+	free (buffer.location);
+}
+
+void test_subscription_dropped (void) {
+	struct SubscriptionDropped d;
+	d.reason = DropReason_NotFound;
+	struct Buffer buffer = get_test_buffer(1024);
+	int32_t len = es_pack_subscription_dropped (&d, buffer);
+	buffer.length = len;
+	struct SubscriptionDropped *msg = es_unpack_subscription_dropped(buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_EQUAL (DropReason_NotFound, msg->reason);
+	destroy_subscription_dropped (&msg);
 	free (buffer.location);
 }
 

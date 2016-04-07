@@ -159,7 +159,7 @@ int es_pack_delete_stream (struct DeleteStream *delete, struct Buffer buffer) {
 
 struct DeleteStream *es_unpack_delete_stream (struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStream *msg;
-	msg = event_store__client__messages__delete_stream__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__delete_stream__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct DeleteStream *ret = malloc (sizeof (struct DeleteStream));
 	ret->event_stream_id = strdup (msg->event_stream_id);
@@ -202,7 +202,7 @@ int es_pack_delete_stream_completed (struct DeleteStreamCompleted *delete, struc
 
 struct DeleteStreamCompleted *es_unpack_delete_stream_completed (struct Buffer buffer) {
 	EventStore__Client__Messages__DeleteStreamCompleted *msg;
-	msg = event_store__client__messages__delete_stream_completed__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__delete_stream_completed__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct DeleteStreamCompleted *ret = malloc (sizeof (struct DeleteStreamCompleted));
 	ret->message = strdup (msg->message);
@@ -237,7 +237,7 @@ int es_pack_subscribe_to_stream (struct SubscribeToStream *subscribe, struct Buf
 
 struct SubscribeToStream *es_unpack_subscribe_to_stream (struct Buffer buffer) {
 	EventStore__Client__Messages__SubscribeToStream *msg;
-	msg = event_store__client__messages__subscribe_to_stream__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__subscribe_to_stream__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct SubscribeToStream *ret = malloc (sizeof (struct SubscribeToStream));
 	ret->event_stream_id = strdup (msg->event_stream_id);
@@ -270,7 +270,7 @@ int es_pack_subscription_confirmation (struct SubscriptionConfirmation *subscrib
 
 struct SubscriptionConfirmation *es_unpack_subscription_confirmation (struct Buffer buffer) {
 	EventStore__Client__Messages__SubscriptionConfirmation *msg;
-	msg = event_store__client__messages__subscription_confirmation__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__subscription_confirmation__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct SubscriptionConfirmation *ret = malloc (sizeof (struct SubscriptionConfirmation));
 	ret->last_commit_position = msg->last_commit_position;
@@ -307,6 +307,43 @@ struct SubscriptionDropped *es_unpack_subscription_dropped (struct Buffer buffer
 	struct SubscriptionDropped *ret = malloc (sizeof (struct SubscriptionDropped));
 	ret->reason = msg->reason;
 	event_store__client__messages__subscription_dropped__free_unpacked (msg, NULL);
+	return ret;
+}
+
+
+void destroy_scavenge_database_completed (struct ScavengeDatabaseCompleted **item) {
+	assert(item);
+	struct ScavengeDatabaseCompleted *self = *item;
+	free (self);
+	*item = NULL;
+}
+
+int es_pack_scavenge_database_completed (struct ScavengeDatabaseCompleted *drop, struct Buffer buffer) {
+	EventStore__Client__Messages__ScavengeDatabaseCompleted msg = EVENT_STORE__CLIENT__MESSAGES__SCAVENGE_DATABASE_COMPLETED__INIT;
+	unsigned len;
+
+	assert (drop);
+	msg.result = drop->result;
+	msg.error = drop->error;
+	msg.total_space_saved = drop->total_space_saved;
+	msg.total_time_ms = drop->total_time_ms;
+	len = event_store__client__messages__scavenge_database_completed__get_packed_size (&msg);
+	if (len > buffer.length)
+		return 0;
+	event_store__client__messages__scavenge_database_completed__pack (&msg, buffer.location);
+	return len;
+}
+
+struct ScavengeDatabaseCompleted *es_unpack_scavenge_database_completed (struct Buffer buffer) {
+	EventStore__Client__Messages__ScavengeDatabaseCompleted *msg;
+	msg = event_store__client__messages__scavenge_database_completed__unpack (NULL, buffer.length, buffer.location);
+	if(msg == NULL) return NULL;
+	struct ScavengeDatabaseCompleted *ret = malloc (sizeof (struct ScavengeDatabaseCompleted));
+	ret->result = msg->result;
+	ret->error = strdup (msg->error);
+	ret->total_time_ms = msg->total_time_ms;
+	ret->total_space_saved = msg->total_space_saved;
+	event_store__client__messages__scavenge_database_completed__free_unpacked (msg, NULL);
 	return ret;
 }
 
@@ -402,7 +439,7 @@ int es_pack_write_events(struct WriteEvents *write, struct Buffer buffer) {
 
 struct WriteEvents *es_unpack_write_events(struct Buffer buffer) {
 	EventStore__Client__Messages__WriteEvents *msg;
-	msg = event_store__client__messages__write_events__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__write_events__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct WriteEvents *ret = malloc (sizeof (struct WriteEvents));
 	ret->event_stream_id = strdup (msg->event_stream_id);
@@ -462,9 +499,9 @@ int es_pack_write_events_completed(struct WriteEventsCompleted *write, struct Bu
 	return len;
 }
 
-struct WriteEventsCompleted *es_unpack_write_events_completed(struct Buffer buffer) {
+struct WriteEventsCompleted *es_unpack_write_events_completed (struct Buffer buffer) {
 	EventStore__Client__Messages__WriteEventsCompleted *msg;
-	msg = event_store__client__messages__write_events_completed__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__write_events_completed__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct WriteEventsCompleted *ret = malloc (sizeof (struct WriteEventsCompleted));
 	ret->message = strdup (msg->message);
@@ -478,7 +515,7 @@ struct WriteEventsCompleted *es_unpack_write_events_completed(struct Buffer buff
 }
 
 
-void destroy_read_stream_events(struct ReadStreamEvents **item) {
+void destroy_read_stream_events (struct ReadStreamEvents **item) {
 	assert(item);
 	struct ReadStreamEvents *self = *item;
 	if (self->event_stream_id) free(self->event_stream_id);
@@ -487,7 +524,7 @@ void destroy_read_stream_events(struct ReadStreamEvents **item) {
 }
 
 
-int es_pack_read_stream_events(struct ReadStreamEvents *read, struct Buffer buffer) {
+int es_pack_read_stream_events (struct ReadStreamEvents *read, struct Buffer buffer) {
 	EventStore__Client__Messages__ReadStreamEvents msg = EVENT_STORE__CLIENT__MESSAGES__READ_STREAM_EVENTS__INIT;
 	unsigned len;
 
@@ -505,7 +542,7 @@ int es_pack_read_stream_events(struct ReadStreamEvents *read, struct Buffer buff
 	return len;
 }
 
-struct ReadStreamEvents *es_unpack_read_stream_events(struct Buffer buffer) {
+struct ReadStreamEvents *es_unpack_read_stream_events (struct Buffer buffer) {
 	EventStore__Client__Messages__ReadStreamEvents *msg;
 	msg = event_store__client__messages__read_stream_events__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
@@ -520,7 +557,7 @@ struct ReadStreamEvents *es_unpack_read_stream_events(struct Buffer buffer) {
 }
 
 
-void destroy_read_event(struct ReadEvent **item) {
+void destroy_read_event (struct ReadEvent **item) {
 	assert(item);
 	struct ReadEvent *self = *item;
 	if (self->event_stream_id) free(self->event_stream_id);
@@ -529,7 +566,7 @@ void destroy_read_event(struct ReadEvent **item) {
 }
 
 
-int es_pack_read_event(struct ReadEvent *read, struct Buffer buffer) {
+int es_pack_read_event (struct ReadEvent *read, struct Buffer buffer) {
 	EventStore__Client__Messages__ReadEvent msg = EVENT_STORE__CLIENT__MESSAGES__READ_EVENT__INIT;
 	unsigned len;
 
@@ -546,7 +583,7 @@ int es_pack_read_event(struct ReadEvent *read, struct Buffer buffer) {
 	return len;
 }
 
-struct ReadEvent *es_unpack_read_event(struct Buffer buffer) {
+struct ReadEvent *es_unpack_read_event (struct Buffer buffer) {
 	EventStore__Client__Messages__ReadEvent *msg;
 	msg = event_store__client__messages__read_event__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
@@ -560,7 +597,7 @@ struct ReadEvent *es_unpack_read_event(struct Buffer buffer) {
 }
 
 
-void destroy_read_all_events(struct ReadAllEvents **item) {
+void destroy_read_all_events (struct ReadAllEvents **item) {
 	assert(item);
 	struct ReadAllEvents *self = *item;
 	free (self);
@@ -568,7 +605,7 @@ void destroy_read_all_events(struct ReadAllEvents **item) {
 }
 
 
-int es_pack_read_all_events(struct ReadAllEvents *read, struct Buffer buffer) {
+int es_pack_read_all_events (struct ReadAllEvents *read, struct Buffer buffer) {
 	EventStore__Client__Messages__ReadAllEvents msg = EVENT_STORE__CLIENT__MESSAGES__READ_ALL_EVENTS__INIT;
 	unsigned len;
 
@@ -585,9 +622,9 @@ int es_pack_read_all_events(struct ReadAllEvents *read, struct Buffer buffer) {
 	return len;
 }
 
-struct ReadAllEvents *es_unpack_read_all_events(struct Buffer buffer) {
+struct ReadAllEvents *es_unpack_read_all_events (struct Buffer buffer) {
 	EventStore__Client__Messages__ReadAllEvents *msg;
-	msg = event_store__client__messages__read_all_events__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__read_all_events__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct ReadAllEvents *ret = malloc (sizeof (struct ReadAllEvents));
 	ret->commit_position = msg->commit_position;
@@ -599,7 +636,7 @@ struct ReadAllEvents *es_unpack_read_all_events(struct Buffer buffer) {
 	return ret;
 }
 
-void destroy_delete_persistent_subscription(struct DeletePersistentSubscription **item) {
+void destroy_delete_persistent_subscription (struct DeletePersistentSubscription **item) {
 	assert(item);
 	struct DeletePersistentSubscription *self = *item;
 	if (self->event_stream_id) free (self->event_stream_id);
@@ -609,7 +646,7 @@ void destroy_delete_persistent_subscription(struct DeletePersistentSubscription 
 }
 
 
-int es_pack_delete_persistent_subscription(struct DeletePersistentSubscription *read, struct Buffer buffer) {
+int es_pack_delete_persistent_subscription (struct DeletePersistentSubscription *read, struct Buffer buffer) {
 	EventStore__Client__Messages__DeletePersistentSubscription msg = EVENT_STORE__CLIENT__MESSAGES__DELETE_PERSISTENT_SUBSCRIPTION__INIT;
 	unsigned len;
 
@@ -623,7 +660,7 @@ int es_pack_delete_persistent_subscription(struct DeletePersistentSubscription *
 	return len;
 }
 
-struct DeletePersistentSubscription *es_unpack_delete_persistent_subscription(struct Buffer buffer) {
+struct DeletePersistentSubscription *es_unpack_delete_persistent_subscription (struct Buffer buffer) {
 	EventStore__Client__Messages__DeletePersistentSubscription *msg;
 	msg = event_store__client__messages__delete_persistent_subscription__unpack(NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
@@ -634,7 +671,7 @@ struct DeletePersistentSubscription *es_unpack_delete_persistent_subscription(st
 	return ret;
 }
 
-void destroy_transaction_commit(struct TransactionCommit **item) {
+void destroy_transaction_commit (struct TransactionCommit **item) {
 	assert(item);
 	struct TransactionCommit *self = *item;
 	free (self);
@@ -642,7 +679,7 @@ void destroy_transaction_commit(struct TransactionCommit **item) {
 }
 
 
-int es_pack_transaction_commit(struct TransactionCommit *tran, struct Buffer buffer) {
+int es_pack_transaction_commit (struct TransactionCommit *tran, struct Buffer buffer) {
 	EventStore__Client__Messages__TransactionCommit msg = EVENT_STORE__CLIENT__MESSAGES__TRANSACTION_COMMIT__INIT;
 	unsigned len;
 
@@ -656,9 +693,9 @@ int es_pack_transaction_commit(struct TransactionCommit *tran, struct Buffer buf
 	return len;
 }
 
-struct TransactionCommit *es_unpack_transaction_commit(struct Buffer buffer) {
+struct TransactionCommit *es_unpack_transaction_commit (struct Buffer buffer) {
 	EventStore__Client__Messages__TransactionCommit *msg;
-	msg = event_store__client__messages__transaction_commit__unpack(NULL, buffer.length, buffer.location);
+	msg = event_store__client__messages__transaction_commit__unpack (NULL, buffer.length, buffer.location);
 	if(msg == NULL) return NULL;
 	struct TransactionCommit *ret = malloc (sizeof (struct TransactionCommit));
 	ret->transaction_id = msg->transaction_id;
@@ -668,7 +705,7 @@ struct TransactionCommit *es_unpack_transaction_commit(struct Buffer buffer) {
 }
 
 #ifdef TESTS
-struct Buffer get_test_buffer(int size) {
+struct Buffer get_test_buffer (int size) {
 	struct Buffer buffer;
 	buffer.location = malloc(size);
 	buffer.length = size;
@@ -750,7 +787,7 @@ void test_subscription_dropped (void) {
 	struct Buffer buffer = get_test_buffer(1024);
 	int32_t len = es_pack_subscription_dropped (&d, buffer);
 	buffer.length = len;
-	struct SubscriptionDropped *msg = es_unpack_subscription_dropped(buffer);
+	struct SubscriptionDropped *msg = es_unpack_subscription_dropped (buffer);
 	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
 	CU_ASSERT_EQUAL (DropReason_NotFound, msg->reason);
 	destroy_subscription_dropped (&msg);
@@ -765,6 +802,25 @@ void test_scavenge_database (void) {
 	struct ScavengeDatabase *msg = es_unpack_scavenge_database (buffer);
 	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
 	destroy_scavenge_database (&msg);
+	free (buffer.location);
+}
+
+void test_scavenge_database_completed (void) {
+	struct ScavengeDatabaseCompleted d;
+	struct Buffer buffer = get_test_buffer (1024);
+	d.total_space_saved = 1234;
+	d.total_time_ms = 17;
+	d.error = "test error";
+	d.result = ScavengeResult_InProgress;
+	int32_t len = es_pack_scavenge_database_completed (&d, buffer);
+	buffer.length = len;
+	struct ScavengeDatabaseCompleted *msg = es_unpack_scavenge_database_completed (buffer);
+	CU_ASSERT_PTR_NOT_NULL_FATAL (msg);
+	CU_ASSERT_EQUAL (1234, msg->total_space_saved);
+	CU_ASSERT_EQUAL (17, msg->total_time_ms);
+	CU_ASSERT_EQUAL (ScavengeResult_InProgress, msg->result);
+	CU_ASSERT_STRING_EQUAL ("test error", msg->error);
+	destroy_scavenge_database_completed (&msg);
 	free (buffer.location);
 }
 
@@ -790,7 +846,6 @@ void test_write_events_completed (void) {
 	destroy_write_events_completed (&msg);
 	free (buffer.location);
 }
-
 
 void test_write_events (void) {
 	struct WriteEvents r;
@@ -941,10 +996,10 @@ void test_transaction_commit (void) {
 
 int register_es_proto_helper_tests() {
    CU_pSuite pSuite = NULL;
-    pSuite = CU_add_suite("proto serialization tests", NULL, NULL);
+    pSuite = CU_add_suite ("proto serialization tests", NULL, NULL);
     if (NULL == pSuite) {
-       CU_cleanup_registry();
-       return CU_get_error();
+       CU_cleanup_registry ();
+       return CU_get_error ();
     }
 
     if ((NULL == CU_add_test(pSuite, "test proto DeleteStream", test_delete_stream)) ||
@@ -959,10 +1014,11 @@ int register_es_proto_helper_tests() {
         (NULL == CU_add_test(pSuite, "test proto WriteEventsCompleted", test_write_events_completed))||
         (NULL == CU_add_test(pSuite, "test proto SubscriptionConfirmation", test_subscription_confirmation))||
         (NULL == CU_add_test(pSuite, "test proto ScavengeDatabase", test_scavenge_database))||
+        (NULL == CU_add_test(pSuite, "test proto ScavengeDatabaseCompleted", test_scavenge_database_completed))||
         0)
     {
-       CU_cleanup_registry();
-       return CU_get_error();
+       CU_cleanup_registry ();
+       return CU_get_error ();
     }
     return 0;
 }

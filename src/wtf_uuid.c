@@ -32,14 +32,12 @@ void test_read_wtf_uuid () {
     get_uuid_from_wtf (uuid, data);
     uuid_unparse (uuid, uuid_str);
     to_lower (uuid_str);
-    printf ("expected %s got %s\n", expected, uuid_str);
     CU_ASSERT_STRING_EQUAL(uuid_str, expected);
     char data1[16] = {0xf8, 0xa6, 0xbb, 0x92, 0xe4, 0x07, 0x4d, 0x4a, 0xb1, 0xdf, 0x19, 0x04, 0xa9, 0x3c, 0x65, 0xa9};
     expected = "92bba6f8-07e4-4a4d-b1df-1904a93c65a9";
     get_uuid_from_wtf (uuid, data1);
     uuid_unparse (uuid, uuid_str);
     to_lower (uuid_str);
-    printf ("expected %s got %s\n", expected, uuid_str);
     CU_ASSERT_STRING_EQUAL (uuid_str, expected);
 }
 

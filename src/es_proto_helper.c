@@ -361,7 +361,7 @@ int es_pack_scavenge_database_completed (struct ScavengeDatabaseCompleted *drop,
 struct ScavengeDatabaseCompleted *es_unpack_scavenge_database_completed (struct Buffer buffer) {
 	EventStore__Client__Messages__ScavengeDatabaseCompleted *msg;
 	msg = event_store__client__messages__scavenge_database_completed__unpack (NULL, buffer.length, buffer.location);
-	if(msg == NULL) return NULL;
+	if (msg == NULL) return NULL;
 	struct ScavengeDatabaseCompleted *ret = malloc (sizeof (struct ScavengeDatabaseCompleted));
 	ret->result = msg->result;
 	ret->error = strdup (msg->error);
@@ -372,7 +372,7 @@ struct ScavengeDatabaseCompleted *es_unpack_scavenge_database_completed (struct 
 }
 
 void destroy_scavenge_database (struct ScavengeDatabase **item) {
-	assert(item);
+	assert (item);
 	struct ScavengeDatabase *self = *item;
 	free (self);
 	*item = NULL;
@@ -401,7 +401,7 @@ struct ScavengeDatabase *es_unpack_scavenge_database (struct Buffer buffer) {
 
 
 void destroy_write_events(struct WriteEvents **item) {
-	assert(item);
+	assert (item);
 	struct WriteEvents *self = *item;
 	if (self->event_stream_id) free(self->event_stream_id);
 	if (self->num_events > 0) {

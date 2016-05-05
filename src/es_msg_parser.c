@@ -150,8 +150,8 @@ char data[24] = {0x0A,0,0,0,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
 
 static void test_parser_create() {
     struct ParserState *state = create_parser_state(32);
-    CU_ASSERT_PTR_NOT_NULL (state->buffer_end);
-    CU_ASSERT_PTR_NOT_NULL (state->buffer_start);
+    CU_ASSERT_PTR_NOT_NULL_FATAL (state->buffer_end);
+    CU_ASSERT_PTR_NOT_NULL_FATAL (state->buffer_start);
     CU_ASSERT (state->parser_read == state->buffer_start);
     CU_ASSERT (state->buffer_start == state->buffer_write);
     destroy_parser_state (&state);
@@ -201,7 +201,7 @@ static void test_compress (void) {
     b.location[0] = 0x0B;
     add_data (state, &b);
     struct Buffer * read = read_next (state);
-    CU_ASSERT_PTR_NOT_NULL (read);
+    CU_ASSERT_PTR_NOT_NULL_FATAL (read);
     assert (state->buffer_write - state->buffer_start == 20);
     CU_ASSERT_EQUAL (state->parser_read, state->buffer_start + 14);
     compress_space (state);
@@ -236,7 +236,7 @@ static void test_perfect_fit_read (void) {
     CU_ASSERT_EQUAL (add_data (state, &b), 0);
     char *old_parser_read = state->parser_read;
     struct  Buffer *ret = read_next (state);
-    CU_ASSERT_PTR_NOT_NULL (ret);
+    CU_ASSERT_PTR_NOT_NULL_FATAL (ret);
     CU_ASSERT (ret->location == state->buffer_start + 4);
     CU_ASSERT_EQUAL (ret->length,10);
     CU_ASSERT (old_parser_read + 14 == state->parser_read);
@@ -252,7 +252,7 @@ static void test_too_much_data_read (void) {
     CU_ASSERT_EQUAL (add_data (state, &b), 0);
     char *old_parser_read = state->parser_read;
     struct  Buffer *ret = read_next (state);
-    CU_ASSERT_PTR_NOT_NULL (ret);
+    CU_ASSERT_PTR_NOT_NULL_FATAL (ret);
     CU_ASSERT (ret->location == state->buffer_start + 4);
     CU_ASSERT_EQUAL (ret->length,10);
     CU_ASSERT (old_parser_read + 14 == state->parser_read);

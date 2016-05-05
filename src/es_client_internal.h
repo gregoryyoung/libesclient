@@ -12,6 +12,4 @@
 #include "es_proto_helper.h"
 
 
-#define TESTS
-
 #endif

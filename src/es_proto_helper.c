@@ -793,6 +793,7 @@ void test_subscribe_to_stream (void) {
 void test_subscription_confirmation (void) {
 	struct SubscriptionConfirmation d;
 	d.last_commit_position = 1919;
+	d.last_commit_position = 1919;
 	d.last_event_number = 6;
 	struct Buffer buffer = get_test_buffer(1024);
 	int32_t len = es_pack_subscription_confirmation (&d, buffer);

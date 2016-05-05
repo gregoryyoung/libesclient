@@ -20,7 +20,7 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) $(LIBS) -o $@
 
 clean:
-	-rm -f *.o
+	-rm -f src/*.o
 	-rm -f $(TARGET)
 test:
 	./es_tests

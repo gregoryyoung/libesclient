@@ -1,7 +1,7 @@
 TARGET = es_tests
 LIBS = -lm -lcunit -luuid -lprotobuf-c
 CC = gcc
-CFLAGS = -g -std=c99 -Wall
+CFLAGS = -g -std=gnu99 -Wall
 
 .PHONY: all clean test default valgrind
 
